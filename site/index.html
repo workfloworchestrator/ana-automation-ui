@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NSI Management Info</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; color: #333; background: #f5f7fa; }
+    header { background: #1a3a5c; color: #fff; padding: 2rem; text-align: center; }
+    header h1 { font-size: 1.8rem; margin-bottom: 0.5rem; }
+    header p { font-size: 1rem; opacity: 0.85; }
+    .container { max-width: 960px; margin: 2rem auto; padding: 0 1rem; }
+    .apps { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.5rem; }
+    .app-card { background: #fff; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); padding: 1.5rem; transition: box-shadow 0.2s; }
+    .app-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+    .app-card h2 { font-size: 1.2rem; margin-bottom: 0.5rem; color: #1a3a5c; }
+    .app-card p { font-size: 0.9rem; color: #666; margin-bottom: 1rem; line-height: 1.5; }
+    .app-card a { display: inline-block; padding: 0.5rem 1rem; background: #1a3a5c; color: #fff; text-decoration: none; border-radius: 4px; font-size: 0.85rem; }
+    .app-card a:hover { background: #264d73; }
+    footer { text-align: center; padding: 2rem; color: #999; font-size: 0.8rem; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>NSI Management Info</h1>
+    <p>Network Service Interface management and monitoring tools</p>
+  </header>
+  <div class="container">
+    <div class="apps">
+      <div class="app-card">
+        <h2>AuRA</h2>
+        <p>Automated Resource Allocation - the NSI user provider agent for managing network reservations across the ANA network.</p>
+        <a href="/aura/">Open AuRA</a>
+      </div>
+      <div class="app-card">
+        <h2>Safnari</h2>
+        <p>NSI Connection Service aggregator - manages and monitors NSI connections across multiple network domains.</p>
+        <a href="/safnari/">Open Safnari</a>
+      </div>
+      <div class="app-card">
+        <h2>DDS</h2>
+        <p>Document Distribution Service - discovers and distributes NSI topology documents and network descriptions.</p>
+        <a href="/dds/">Open DDS</a>
+      </div>
+      <div class="app-card">
+        <h2>DDS Proxy</h2>
+        <p>REST API proxy for the DDS - provides a simplified interface to query topologies, STPs, and SDPs.</p>
+        <a href="/dds-proxy/docs">Open API Docs</a>
+      </div>
+      <div class="app-card">
+        <h2>Aggregator Proxy</h2>
+        <p>REST proxy for the NSI aggregator - exposes a simplified connection state-machine on top of NSI.</p>
+        <a href="/aggregator-proxy/docs">Open API Docs</a>
+      </div>
+    </div>
+  </div>
+  <footer>
+    NSI Management Info
+  </footer>
+</body>
+</html>

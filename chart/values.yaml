@@ -1,0 +1,43 @@
+replicaCount: 1
+
+image:
+  repository: ghcr.io/workfloworchestrator/nsi-mgmt-info
+  pullPolicy: Always
+  tag: "latest"
+
+nameOverride: ""
+fullnameOverride: ""
+
+service:
+  type: ClusterIP
+  port: 80
+
+ingress:
+  enabled: false
+  className: ""
+  host: chart-example.local
+  annotations: {}
+    # cert-manager.io/issuer: harica
+    # nginx.ingress.kubernetes.io/auth-url: "http://oauth2-proxy.namespace.svc.cluster.local/oauth2/auth"
+    # nginx.ingress.kubernetes.io/auth-signin: "https://chart-example.local/oauth2/start?rd=$escaped_request_uri"
+    # nginx.ingress.kubernetes.io/auth-response-headers: "X-Auth-Request-User,X-Auth-Request-Email"
+  tls: []
+  #  - secretName: chart-example-tls
+  #    hosts:
+  #      - chart-example.local
+
+# Backend applications routed through the portal ingress.
+# Each backend gets its own Ingress resource with path rewriting.
+# The path prefix is stripped before forwarding to the backend service.
+backends: []
+  # - name: dds-proxy
+  #   serviceName: development-nsi-dds-proxy
+  #   servicePort: 80
+
+resources: {}
+  # limits:
+  #   cpu: 100m
+  #   memory: 64Mi
+  # requests:
+  #   cpu: 10m
+  #   memory: 32Mi
