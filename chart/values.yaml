@@ -33,6 +33,10 @@ backends: []
   # - name: dds-proxy
   #   serviceName: development-nsi-dds-proxy
   #   servicePort: 80
+  # - name: dds
+  #   serviceName: development-nsi-dds
+  #   servicePort: 80
+  #   rewriteTarget: "/dds/$1"
   # - name: safnari
   #   serviceName: development-nsi-safnari
   #   servicePort: 80

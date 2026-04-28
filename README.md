@@ -134,6 +134,20 @@ backends:
 This creates an Ingress that routes `/my-app/(.*)` to the backend service with
 the prefix stripped.
 
+### Preserving the path prefix
+
+Some backends already include the path prefix in their routes (e.g. DDS serves
+all endpoints under `/dds/`). For these, set `rewriteTarget` to preserve the
+prefix instead of stripping it:
+
+```yaml
+backends:
+  - name: dds
+    serviceName: development-nsi-dds
+    servicePort: 80
+    rewriteTarget: "/dds/$1"
+```
+
 ### Per-backend annotations
 
 Backends can specify additional annotations that are merged with the shared
