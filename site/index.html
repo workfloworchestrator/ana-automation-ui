@@ -3,31 +3,40 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>NSI Management Info</title>
+  <title>ANA Management Portal</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; color: #333; background: #f5f7fa; }
-    header { background: #1a3a5c; color: #fff; padding: 2rem; text-align: center; }
+    header { background: linear-gradient(135deg, #2a5c5c, #3d7a7a); color: #fff; padding: 2rem; display: flex; align-items: center; gap: 1.5rem; max-width: 960px; margin: 0 auto; }
+    header img { height: 100%; align-self: stretch; flex-shrink: 0; }
     header h1 { font-size: 1.8rem; margin-bottom: 0.5rem; }
     header p { font-size: 1rem; opacity: 0.85; }
+    .header-bg { background: linear-gradient(135deg, #2a5c5c, #3d7a7a); }
     .container { max-width: 960px; margin: 2rem auto; padding: 0 1rem; }
     .apps { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.5rem; }
     .app-card { background: #fff; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); padding: 1.5rem; transition: box-shadow 0.2s; }
     .app-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
-    .app-card h2 { font-size: 1.2rem; margin-bottom: 0.5rem; color: #1a3a5c; }
+    .app-card h2 { font-size: 1.2rem; margin-bottom: 0.5rem; color: #2a5c5c; }
     .app-card p { font-size: 0.9rem; color: #666; margin-bottom: 1rem; line-height: 1.5; }
-    .app-card a { display: inline-block; padding: 0.5rem 1rem; background: #1a3a5c; color: #fff; text-decoration: none; border-radius: 4px; font-size: 0.85rem; }
-    .app-card a:hover { background: #264d73; }
+    .app-card a { display: inline-block; padding: 0.5rem 1rem; background: #c0392b; color: #fff; text-decoration: none; border-radius: 4px; font-size: 0.85rem; }
+    .app-card a:hover { background: #a93226; }
     .app-card.coming-soon { opacity: 0.5; }
     .app-card.coming-soon span { display: inline-block; padding: 0.5rem 1rem; background: #999; color: #fff; border-radius: 4px; font-size: 0.85rem; cursor: default; }
     footer { text-align: center; padding: 2rem; color: #999; font-size: 0.8rem; }
+    footer a { color: #2a5c5c; text-decoration: none; }
+    footer a:hover { text-decoration: underline; }
   </style>
 </head>
 <body>
+  <div class="header-bg">
   <header>
-    <h1>NSI Management Info</h1>
-    <p>Network Service Interface management and monitoring tools</p>
+    <img src="ana-logo.png" alt="ANA">
+    <div>
+      <h1>ANA Management Portal</h1>
+      <p>Network automation management and monitoring tools</p>
+    </div>
   </header>
+  </div>
   <div class="container">
     <div class="apps">
       <div class="app-card">
@@ -64,7 +73,7 @@
     </div>
   </div>
   <footer>
-    NSI Management Info
+    <a href="https://www.anaeng.global/">Advanced North Atlantic Consortium</a>
   </footer>
 </body>
 </html>
