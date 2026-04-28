@@ -42,5 +42,6 @@ helm template test chart/ --values values.yaml
 
 - Each backend gets its own Ingress resource because nginx ingress `rewrite-target` applies per-Ingress, not per-path
 - Backend path prefixes are stripped before forwarding (e.g. `/dds-proxy/docs` → `/docs`), so backend apps don't need path awareness
+- Backends support optional per-backend `annotations` for cases like server-rendered apps that need nginx `sub_filter` response rewriting (e.g. Safnari's Play-generated absolute paths are rewritten to include the `/safnari/` prefix)
 - oauth2-proxy annotations are set on all ingresses (main + backends) via shared `.Values.ingress.annotations`
 - Separate hostname from existing mTLS ingresses avoids TLS-level conflict (`auth-tls-verify-client` is a server-level nginx directive that applies to the entire hostname)

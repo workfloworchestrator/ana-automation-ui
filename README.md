@@ -133,3 +133,29 @@ backends:
 
 This creates an Ingress that routes `/my-app/(.*)` to the backend service with
 the prefix stripped.
+
+### Per-backend annotations
+
+Backends can specify additional annotations that are merged with the shared
+ingress annotations. This is useful for server-rendered applications (like Play
+or Rails apps) whose HTML contains absolute paths that need rewriting. For
+example, Safnari uses nginx `sub_filter` to rewrite paths in HTML responses:
+
+```yaml
+backends:
+  - name: safnari
+    serviceName: development-nsi-safnari
+    servicePort: 80
+    annotations:
+      nginx.ingress.kubernetes.io/configuration-snippet: |
+        sub_filter_once off;
+        sub_filter_types text/html;
+        sub_filter 'href="/' 'href="/safnari/';
+        sub_filter 'src="/' 'src="/safnari/';
+        proxy_set_header Accept-Encoding "";
+```
+
+This approach works well for applications with simple server-rendered HTML (no
+AJAX or JavaScript-generated URLs). Applications with JavaScript-driven UIs
+(like FastAPI's Swagger docs) should use their framework's root path support
+instead.

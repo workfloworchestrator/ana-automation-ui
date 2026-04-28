@@ -33,6 +33,16 @@ backends: []
   # - name: dds-proxy
   #   serviceName: development-nsi-dds-proxy
   #   servicePort: 80
+  # - name: safnari
+  #   serviceName: development-nsi-safnari
+  #   servicePort: 80
+  #   annotations:
+  #     nginx.ingress.kubernetes.io/configuration-snippet: |
+  #       sub_filter_once off;
+  #       sub_filter_types text/html;
+  #       sub_filter 'href="/' 'href="/safnari/';
+  #       sub_filter 'src="/' 'src="/safnari/';
+  #       proxy_set_header Accept-Encoding "";
 
 resources: {}
   # limits:
