@@ -18,6 +18,8 @@
     .app-card p { font-size: 0.9rem; color: #666; margin-bottom: 1rem; line-height: 1.5; }
     .app-card a { display: inline-block; padding: 0.5rem 1rem; background: #1a3a5c; color: #fff; text-decoration: none; border-radius: 4px; font-size: 0.85rem; }
     .app-card a:hover { background: #264d73; }
+    .app-card.coming-soon { opacity: 0.5; }
+    .app-card.coming-soon span { display: inline-block; padding: 0.5rem 1rem; background: #999; color: #fff; border-radius: 4px; font-size: 0.85rem; cursor: default; }
     footer { text-align: center; padding: 2rem; color: #999; font-size: 0.8rem; }
   </style>
 </head>
@@ -52,6 +54,12 @@
         <h2>Aggregator Proxy</h2>
         <p>REST proxy for the NSI aggregator - exposes a simplified connection state-machine on top of NSI.</p>
         <a href="/aggregator-proxy/docs">Open API Docs</a>
+      </div>
+      <!-- future URL: /orchestrator/ -->
+      <div class="app-card coming-soon">
+        <h2>Orchestrator</h2>
+        <p>Lifecycle management of network topologies, switching services, STPs, SDPs, and multi-domain point-to-point services.</p>
+        <span>Coming Soon</span>
       </div>
     </div>
   </div>
