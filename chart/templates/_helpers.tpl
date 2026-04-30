@@ -1,14 +1,14 @@
 {{/*
 Expand the name of the chart.
 */}}
-{{- define "nsi-mgmt-info.name" -}}
+{{- define "ana-automation-ui.name" -}}
 {{- default .Chart.Name .Values.nameOverride | trunc 63 | trimSuffix "-" }}
 {{- end }}
 
 {{/*
 Create a default fully qualified app name.
 */}}
-{{- define "nsi-mgmt-info.fullname" -}}
+{{- define "ana-automation-ui.fullname" -}}
 {{- if .Values.fullnameOverride }}
 {{- .Values.fullnameOverride | trunc 63 | trimSuffix "-" }}
 {{- else }}
@@ -24,16 +24,16 @@ Create a default fully qualified app name.
 {{/*
 Create chart name and version as used by the chart label.
 */}}
-{{- define "nsi-mgmt-info.chart" -}}
+{{- define "ana-automation-ui.chart" -}}
 {{- printf "%s-%s" .Chart.Name .Chart.Version | replace "+" "_" | trunc 63 | trimSuffix "-" }}
 {{- end }}
 
 {{/*
 Common labels
 */}}
-{{- define "nsi-mgmt-info.labels" -}}
-helm.sh/chart: {{ include "nsi-mgmt-info.chart" . }}
-{{ include "nsi-mgmt-info.selectorLabels" . }}
+{{- define "ana-automation-ui.labels" -}}
+helm.sh/chart: {{ include "ana-automation-ui.chart" . }}
+{{ include "ana-automation-ui.selectorLabels" . }}
 {{- if .Chart.AppVersion }}
 app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
 {{- end }}
@@ -43,7 +43,7 @@ app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{/*
 Selector labels
 */}}
-{{- define "nsi-mgmt-info.selectorLabels" -}}
-app.kubernetes.io/name: {{ include "nsi-mgmt-info.name" . }}
+{{- define "ana-automation-ui.selectorLabels" -}}
+app.kubernetes.io/name: {{ include "ana-automation-ui.name" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}

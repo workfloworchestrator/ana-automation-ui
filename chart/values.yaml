@@ -1,7 +1,7 @@
 replicaCount: 1
 
 image:
-  repository: ghcr.io/workfloworchestrator/nsi-mgmt-info
+  repository: ghcr.io/workfloworchestrator/ana-automation-ui
   pullPolicy: Always
   tag: "latest"
 

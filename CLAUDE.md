@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-NSI Management Info is a shared OIDC-authenticated portal that provides browser access to the UI endpoints of the NSI automation stack. It serves a static HTML landing page via nginx, with links to each application. Part of the ANA-GRAM project for federated network automation across research institutions.
+ANA Automation UI is a shared OIDC-authenticated portal that provides browser access to the UI endpoints of the NSI automation stack. It serves a static HTML landing page via nginx, with links to each application. Part of the ANA-GRAM project for federated network automation across research institutions.
 
 The portal runs on its own hostname (`mgmt-info.dev.automation.surf.net`) alongside the existing per-application mTLS ingresses, which remain unchanged for machine-to-machine API access.
 
@@ -12,10 +12,10 @@ The portal runs on its own hostname (`mgmt-info.dev.automation.surf.net`) alongs
 
 ```bash
 # Build the container image
-docker build -t nsi-mgmt-info .
+docker build -t ana-automation-ui .
 
 # Run locally
-docker run --rm -p 8080:8080 nsi-mgmt-info
+docker run --rm -p 8080:8080 ana-automation-ui
 
 # Render Helm templates for verification
 helm template test chart/

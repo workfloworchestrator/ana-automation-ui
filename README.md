@@ -1,6 +1,6 @@
-# nsi-mgmt-info
+# ana-automation-ui
 
-The NSI Management Info portal is a shared OIDC-authenticated landing page that
+The ANA Automation UI portal is a shared OIDC-authenticated landing page that
 provides browser access to the UI endpoints of the NSI automation stack. It
 serves a static HTML page with links to each application, and uses a shared
 nginx ingress with path-based routing and oauth2-proxy for authentication.
@@ -39,7 +39,7 @@ OIDC-authenticated browser access to their UI endpoints:
 Browser
   │
   ├── https://mgmt-info.dev.automation.surf.net/
-  │     └── oauth2-proxy (OIDC) → nsi-mgmt-info (landing page)
+  │     └── oauth2-proxy (OIDC) → ana-automation-ui (landing page)
   │
   ├── https://mgmt-info.dev.automation.surf.net/dds-proxy/
   │     └── oauth2-proxy (OIDC) → nsi-dds-proxy (rewrite /dds-proxy/… → /…)
@@ -67,8 +67,8 @@ hostnames (e.g. `dds-proxy.dev.automation.surf.net`).
 Build and run the container:
 
 ```bash
-docker build -t nsi-mgmt-info .
-docker run --rm -p 8080:8080 nsi-mgmt-info
+docker build -t ana-automation-ui .
+docker run --rm -p 8080:8080 ana-automation-ui
 ```
 
 Then open http://localhost:8080 in your browser.
@@ -76,7 +76,7 @@ Then open http://localhost:8080 in your browser.
 A pre-built image is available on the GitHub Container Registry:
 
 ```
-ghcr.io/workfloworchestrator/nsi-mgmt-info:main
+ghcr.io/workfloworchestrator/ana-automation-ui:main
 ```
 
 ### With Helm chart
@@ -85,14 +85,14 @@ Install the chart with a custom values file:
 
 ```shell
 helm upgrade --install --namespace development \
-  --values values.yaml nsi-mgmt-info chart
+  --values values.yaml ana-automation-ui chart
 ```
 
 Example `values.yaml`:
 
 ```yaml
 image:
-  repository: ghcr.io/workfloworchestrator/nsi-mgmt-info
+  repository: ghcr.io/workfloworchestrator/ana-automation-ui
   tag: main
 ingress:
   enabled: true

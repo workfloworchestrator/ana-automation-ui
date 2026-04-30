@@ -1,18 +1,18 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "nsi-mgmt-info.fullname" . }}
+  name: {{ include "ana-automation-ui.fullname" . }}
   labels:
-    {{- include "nsi-mgmt-info.labels" . | nindent 4 }}
+    {{- include "ana-automation-ui.labels" . | nindent 4 }}
 spec:
   replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
-      {{- include "nsi-mgmt-info.selectorLabels" . | nindent 6 }}
+      {{- include "ana-automation-ui.selectorLabels" . | nindent 6 }}
   template:
     metadata:
       labels:
-        {{- include "nsi-mgmt-info.selectorLabels" . | nindent 8 }}
+        {{- include "ana-automation-ui.selectorLabels" . | nindent 8 }}
     spec:
       containers:
         - name: {{ .Chart.Name }}

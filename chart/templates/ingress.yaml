@@ -5,9 +5,9 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: {{ include "nsi-mgmt-info.fullname" . }}
+  name: {{ include "ana-automation-ui.fullname" . }}
   labels:
-    {{- include "nsi-mgmt-info.labels" . | nindent 4 }}
+    {{- include "ana-automation-ui.labels" . | nindent 4 }}
   {{- with .Values.ingress.annotations }}
   annotations:
     {{- toYaml . | nindent 4 }}
@@ -34,7 +34,7 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: {{ include "nsi-mgmt-info.fullname" . }}
+                name: {{ include "ana-automation-ui.fullname" . }}
                 port:
                   number: {{ .Values.service.port }}
 {{- end }}
@@ -48,9 +48,9 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: {{ include "nsi-mgmt-info.fullname" $ }}-{{ .name }}
+  name: {{ include "ana-automation-ui.fullname" $ }}-{{ .name }}
   labels:
-    {{- include "nsi-mgmt-info.labels" $ | nindent 4 }}
+    {{- include "ana-automation-ui.labels" $ | nindent 4 }}
   annotations:
     nginx.ingress.kubernetes.io/rewrite-target: {{ .rewriteTarget | default (printf "/%s" `$1`) }}
     {{- with $.Values.ingress.annotations }}
