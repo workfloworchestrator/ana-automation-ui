@@ -12,6 +12,14 @@
     header h1 { font-size: 1.8rem; margin-bottom: 0.5rem; }
     header p { font-size: 1rem; opacity: 0.85; }
     .header-bg { background: linear-gradient(135deg, #2a5c5c, #3d7a7a); }
+    .user-menu { position: relative; margin-left: auto; align-self: flex-start; }
+    .user-button { width: 2.5rem; height: 2.5rem; border-radius: 50%; border: 2px solid rgba(255,255,255,0.6); background: rgba(255,255,255,0.15); color: #fff; font-size: 1rem; font-weight: 600; cursor: pointer; }
+    .user-button:hover { background: rgba(255,255,255,0.25); }
+    .user-panel { position: absolute; right: 0; top: calc(100% + 0.5rem); min-width: 220px; background: #fff; color: #333; border-radius: 8px; box-shadow: 0 4px 16px rgba(0,0,0,0.2); padding: 1rem; z-index: 10; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.8rem; }
+    .user-panel p { margin-bottom: 0.4rem; word-break: break-all; }
+    .user-panel .user-id { font-weight: 700; color: #2a5c5c; }
+    .user-panel .signout { display: inline-block; margin-top: 0.6rem; padding: 0.4rem 0.8rem; background: #c0392b; color: #fff; text-decoration: none; border-radius: 4px; }
+    .user-panel .signout:hover { background: #a93226; }
     .container { max-width: 960px; margin: 2rem auto; padding: 0 1rem; }
     .apps { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.5rem; }
     .app-card { position: relative; background: #fff; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); padding: 1.5rem; transition: box-shadow 0.2s; }
@@ -35,6 +43,7 @@
     footer a { color: #2a5c5c; text-decoration: none; }
     footer a:hover { text-decoration: underline; }
   </style>
+  <script src="/static/app.js" defer></script>
 </head>
 <body>
   <div class="header-bg">
@@ -43,6 +52,16 @@
     <div>
       <h1>ANA Management Portal</h1>
       <p>Network automation management and monitoring tools</p>
+    </div>
+    <div class="user-menu">
+      <button class="user-button" id="user-button" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="user-panel">{{ (user.user or user.email or '?')[0] | upper }}</button>
+      <div class="user-panel" id="user-panel" hidden>
+        <p class="user-id">{{ user.user or 'unknown user' }}</p>
+        {% if user.email %}<p class="user-email">{{ user.email }}</p>{% endif %}
+        <p class="user-role">role: {{ user.role.value }}</p>
+        <p class="user-groups">groups: {{ user.groups | sort | join(', ') or 'none' }}</p>
+        <a class="signout" href="/oauth2/sign_out?rd={{ request.base_url }}">Sign out</a>
+      </div>
     </div>
   </header>
   </div>

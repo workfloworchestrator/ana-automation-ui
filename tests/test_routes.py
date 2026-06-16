@@ -17,6 +17,7 @@ client = TestClient(app)
         pytest.param("/health", "text/plain", id="health"),
         pytest.param("/", "text/html", id="index"),
         pytest.param("/static/ana-logo.png", "image/png", id="logo"),
+        pytest.param("/static/app.js", "text/javascript", id="app-js"),
     ],
 )
 def test_get_ok(path, content_type_prefix):
@@ -145,6 +146,33 @@ def test_request_access_rate_limited(monkeypatch):
         assert response.status_code == 429
     finally:
         app.dependency_overrides.clear()
+
+
+# --- user menu -------------------------------------------------------------
+
+
+def test_index_shows_user_menu():
+    body = client.get(
+        "/",
+        headers={"X-Auth-Request-User": "dave", "X-Auth-Request-Email": "dave@x", "X-Auth-Request-Groups": "operators"},
+    ).text
+    assert 'id="user-button"' in body
+    assert "dave@x" in body
+    assert "operator" in body
+    assert "/oauth2/sign_out" in body
+
+
+@pytest.mark.parametrize(
+    ("headers", "expected_groups"),
+    [
+        pytest.param({"X-Auth-Request-Groups": "operators"}, "operators", id="operator-groups"),
+        pytest.param({"X-Auth-Request-Groups": "users,extra"}, "extra, users", id="sorted-groups"),
+        pytest.param({}, "none", id="no-groups"),
+    ],
+)
+def test_user_menu_lists_groups(headers, expected_groups):
+    body = client.get("/", headers=headers).text
+    assert f"groups: {expected_groups}" in body
 
 
 # --- unhappy paths ---------------------------------------------------------
