@@ -27,9 +27,29 @@ class CurrentUser:
     groups: frozenset[str]
     role: Role
 
+    @property
+    def initials(self) -> str:
+        """Avatar initials derived from the email (or user) identifier."""
+        return _initials(self.email or self.user)
+
+    @property
+    def short_groups(self) -> list[str]:
+        """Group memberships as sorted short names (the last URN segment)."""
+        return sorted({_short_group(group) for group in self.groups})
+
 
 def _parse_groups(raw: str) -> frozenset[str]:
     return frozenset(group.strip() for group in raw.split(",") if group.strip())
+
+
+def _initials(name: str) -> str:
+    local = name.split("@", 1)[0]
+    parts = [part for part in local.replace("-", ".").replace("_", ".").split(".") if part]
+    return "".join(part[0] for part in parts[:2]).upper() or "?"
+
+
+def _short_group(group: str) -> str:
+    return group.rsplit(":", 1)[-1].split("#", 1)[0]
 
 
 def _role_for(groups: frozenset[str], settings: Settings) -> Role:

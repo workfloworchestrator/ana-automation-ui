@@ -170,21 +170,25 @@ def test_index_shows_user_menu():
     ).text
     assert 'id="user-button"' in body
     assert "dave@x" in body
-    assert "operator" in body
+    assert "Operator" in body
     assert "/oauth2/sign_out" in body
 
 
 @pytest.mark.parametrize(
-    ("headers", "expected_groups"),
+    ("groups_header", "expected_items"),
     [
-        pytest.param({"X-Auth-Request-Groups": "operators"}, "operators", id="operator-groups"),
-        pytest.param({"X-Auth-Request-Groups": "users,extra"}, "extra, users", id="sorted-groups"),
-        pytest.param({}, "none", id="no-groups"),
+        pytest.param("operators", ["operators"], id="single"),
+        pytest.param("users,extra", ["extra", "users"], id="multiple-sorted"),
+        pytest.param("urn:example:group:team:users", ["users"], id="urn-shortened"),
     ],
 )
-def test_user_menu_lists_groups(headers, expected_groups):
-    body = client.get("/", headers=headers).text
-    assert f"groups: {expected_groups}" in body
+def test_user_menu_lists_groups(groups_header, expected_items):
+    body = client.get("/", headers={"X-Auth-Request-Groups": groups_header}).text
+    assert all(f"<li>{item}</li>" in body for item in expected_items)
+
+
+def test_user_menu_hides_groups_when_none():
+    assert 'class="group-list"' not in client.get("/").text
 
 
 # --- unhappy paths ---------------------------------------------------------

@@ -2,7 +2,16 @@ import pytest
 from starlette.datastructures import Headers
 from starlette.requests import Request
 
-from app.auth import CurrentUser, Role, _parse_groups, _role_for, _user_from_headers, get_current_user
+from app.auth import (
+    CurrentUser,
+    Role,
+    _initials,
+    _parse_groups,
+    _role_for,
+    _short_group,
+    _user_from_headers,
+    get_current_user,
+)
 from app.config import Settings
 
 DEFAULTS = Settings(_env_file=None)
@@ -100,3 +109,42 @@ def test_get_current_user_reads_request_headers():
     user = get_current_user(request, DEFAULTS)
     assert user.user == "carol"
     assert user.role == Role.OPERATOR
+
+
+# --- presentation helpers --------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    ("name", "expected"),
+    [
+        pytest.param("jane.doe@example.org", "JD", id="dotted-name"),
+        pytest.param("dave@example.org", "D", id="single-part"),
+        pytest.param("a-b_c.d@example.org", "AB", id="mixed-separators"),
+        pytest.param("", "?", id="empty"),
+    ],
+)
+def test_initials(name, expected):
+    assert _initials(name) == expected
+
+
+@pytest.mark.parametrize(
+    ("group", "expected"),
+    [
+        pytest.param("urn:example:group:team:operators", "operators", id="urn"),
+        pytest.param("urn:example:group:team#frag.example.org", "team", id="fragment"),
+        pytest.param("operators", "operators", id="plain"),
+    ],
+)
+def test_short_group(group, expected):
+    assert _short_group(group) == expected
+
+
+def test_current_user_presentation_properties():
+    user = CurrentUser(
+        user="subject-id@example.org",
+        email="jane.doe@example.org",
+        groups=frozenset({"urn:example:group:team:users", "urn:example:group:team"}),
+        role=Role.USER,
+    )
+    assert user.initials == "JD"
+    assert user.short_groups == ["team", "users"]
