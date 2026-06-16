@@ -60,7 +60,7 @@ async def index(
     settings: Annotated[Settings, Depends(get_settings)],
 ) -> HTMLResponse:
     """Render the portal landing page with group-aware app stations."""
-    views = app_views(load_apps(settings.apps_config_path), user.role, settings)
+    views = app_views(load_apps(settings.apps_config_path), user.role)
     context = {"user": user, "apps": views, "email_enabled": settings.email_enabled}
     return templates.TemplateResponse(request, "index.html", context)
 

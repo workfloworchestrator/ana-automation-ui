@@ -4,10 +4,6 @@ import pytest
 
 from app.apps import AccessState, AppCard, _badge, _state_for, app_views, load_apps
 from app.auth import Role
-from app.config import Settings
-
-DEFAULTS = Settings(_env_file=None)
-
 
 # --- model + loading -------------------------------------------------------
 
@@ -52,7 +48,7 @@ def test_load_apps_falls_back_to_bundled(tmp_path):
 )
 def test_state_for(required_group, coming_soon, role, expected):
     card = AppCard(name="X", required_group=required_group, coming_soon=coming_soon)
-    assert _state_for(card, role, DEFAULTS) == expected
+    assert _state_for(card, role) == expected
 
 
 @pytest.mark.parametrize(
@@ -65,12 +61,12 @@ def test_state_for(required_group, coming_soon, role, expected):
     ],
 )
 def test_badge(required_group, expected):
-    assert _badge(required_group, DEFAULTS) == expected
+    assert _badge(required_group) == expected
 
 
 def test_app_views_pairs_state_and_badge():
     apps = [AppCard(name="Op", required_group="operators"), AppCard(name="Any")]
-    views = app_views(apps, Role.USER, DEFAULTS)
+    views = app_views(apps, Role.USER)
     assert [(view.app.name, view.state, view.badge) for view in views] == [
         ("Op", AccessState.LOCKED, "OPERATORS"),
         ("Any", AccessState.OPEN, "USERS"),

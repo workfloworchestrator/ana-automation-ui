@@ -9,7 +9,6 @@ from pydantic import BaseModel, ConfigDict
 from pydantic.alias_generators import to_camel
 
 from app.auth import Role
-from app.config import Settings
 
 DEFAULT_APPS_PATH = Path(__file__).resolve().parent / "apps.json"
 
@@ -50,33 +49,30 @@ def load_apps(path: Path) -> list[AppCard]:
     return [AppCard.model_validate(item) for item in items]
 
 
-def _can_open(required_group: str, role: Role, settings: Settings) -> bool:
-    match required_group:
-        case group if group == settings.operators_group:
-            return role is Role.OPERATOR
-        case _:
-            return role in {Role.USER, Role.OPERATOR}
+def _requires_operators(required_group: str) -> bool:
+    # requiredGroup is a logical access level ("operators", "users" or empty), not an
+    # IdP group identifier; only "operators" restricts an app to the operator role.
+    return required_group.strip().casefold() == "operators"
 
 
-def _badge(required_group: str, settings: Settings) -> str:
-    match required_group:
-        case group if group == settings.operators_group:
-            return "OPERATORS"
-        case _:
-            return "USERS"
+def _can_open(required_group: str, role: Role) -> bool:
+    if _requires_operators(required_group):
+        return role is Role.OPERATOR
+    return role in {Role.USER, Role.OPERATOR}
 
 
-def _state_for(app: AppCard, role: Role, settings: Settings) -> AccessState:
+def _badge(required_group: str) -> str:
+    return "OPERATORS" if _requires_operators(required_group) else "USERS"
+
+
+def _state_for(app: AppCard, role: Role) -> AccessState:
     if app.coming_soon:
         return AccessState.COMING_SOON
-    if _can_open(app.required_group, role, settings):
+    if _can_open(app.required_group, role):
         return AccessState.OPEN
     return AccessState.LOCKED
 
 
-def app_views(apps: list[AppCard], role: Role, settings: Settings) -> list[AppView]:
+def app_views(apps: list[AppCard], role: Role) -> list[AppView]:
     """Pair each app with its access state and badge for the given role."""
-    return [
-        AppView(app=app, state=_state_for(app, role, settings), badge=_badge(app.required_group, settings))
-        for app in apps
-    ]
+    return [AppView(app=app, state=_state_for(app, role), badge=_badge(app.required_group)) for app in apps]

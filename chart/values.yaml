@@ -107,15 +107,17 @@ secretProviderClass:
     # - key: cookie-secret
     #   objectName: ana-automation-ui-development-cookie-secret
 
-# OIDC group names forwarded by oauth2-proxy (X-Auth-Request-Groups). The portal uses
-# these to decide which apps a user may open; operators is a superset of users.
+# IdP group identifiers as they appear in X-Auth-Request-Groups (plain names or, e.g.,
+# SRAM-style URNs). The portal maps a user to the operators (read-write) or users
+# (read-only) role by matching these; operators is treated as a superset of users.
 groups:
   users: users
   operators: operators
 
 # Portal apps shown on the landing page. Rendered into a ConfigMap and mounted at
 # /config/apps.json; when empty, the image's bundled default app list is used.
-# requiredGroup must match the ingress enforcement for that backend (see backends).
+# requiredGroup is a logical access level: "operators" (operator role only), or "users"
+# / empty (any group member). It must agree with the routing-layer enforcement.
 portal:
   apps: []
     # - name: AuRA
