@@ -106,3 +106,22 @@ secretProviderClass:
     #   objectName: ana-automation-ui-development-oidc-client-secret
     # - key: cookie-secret
     #   objectName: ana-automation-ui-development-cookie-secret
+
+# Access-request email feature. When enabled, a signed-in user who is in neither the
+# users nor operators group can email a request for access to "recipient" via the
+# cluster SMTP relay. By default the mail is sent from a fixed authenticated sender
+# ("from") with the requester in Reply-To, which survives relay SPF/sender checks;
+# set fromUser: true to send From the requester's own address (may be rejected).
+email:
+  enabled: false
+  from: ""                # fixed sender address used as From
+  fromUser: false         # use the requester's email as From instead
+  recipient: ""           # where access requests are delivered
+  smtp:
+    host: ""
+    port: 25
+    security: none        # none | starttls | tls
+    username: ""          # optional SMTP auth username
+    passwordSecret:       # optional; can point at the CSI-synced "<release>-secret"
+      name: ""
+      key: ""
