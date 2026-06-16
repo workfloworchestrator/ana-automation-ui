@@ -1,3 +1,4 @@
+from collections.abc import Awaitable, Callable
 from pathlib import Path
 from typing import Annotated
 
@@ -5,12 +6,21 @@ from fastapi import Depends, FastAPI, Form, HTTPException, Request
 from fastapi.responses import HTMLResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from starlette.responses import Response
 
 from app.apps import app_views, load_apps
 from app.auth import CurrentUser, get_current_user
 from app.config import Settings, get_settings
 from app.mail import InvalidRequest, send_access_request
 from app.ratelimit import RateLimiter
+
+# Inline styles are still used by the templates, so style-src allows 'unsafe-inline'
+# for now; the redesign moves CSS to static/ and drops it. Scripts stay 'self' only.
+_CONTENT_SECURITY_POLICY = (
+    "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; "
+    "img-src 'self' data:; font-src 'self'; form-action 'self'; "
+    "frame-ancestors 'none'; base-uri 'none'"
+)
 
 BASE_DIR = Path(__file__).resolve().parent
 templates = Jinja2Templates(directory=BASE_DIR / "templates")
@@ -24,6 +34,17 @@ app = FastAPI(
 app.mount("/static", StaticFiles(directory=BASE_DIR / "static"), name="static")
 
 _access_request_limiter = RateLimiter(max_requests=3, window_seconds=300)
+
+
+@app.middleware("http")
+async def security_headers(request: Request, call_next: Callable[[Request], Awaitable[Response]]) -> Response:
+    """Attach a content-security-policy and standard hardening headers to every response."""
+    response = await call_next(request)
+    response.headers["Content-Security-Policy"] = _CONTENT_SECURITY_POLICY
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["Referrer-Policy"] = "same-origin"
+    return response
 
 
 @app.get("/health", response_class=PlainTextResponse)

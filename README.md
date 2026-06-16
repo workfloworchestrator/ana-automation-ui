@@ -1,14 +1,13 @@
 # ana-automation-ui
 
 The ANA Automation UI portal is a shared OIDC-authenticated landing page that
-provides browser access to the UI endpoints of the NSI automation stack. It
-serves a static HTML page with links to each application, and uses a shared
-nginx ingress with path-based routing and oauth2-proxy for authentication.
+provides browser access to the UI endpoints of the NSI automation stack. It is a
+FastAPI application that renders a group-aware portal: each application is shown as
+a card whose link is enabled only for users whose group grants access. Users who
+are in neither group see the greyed-out cards and a form to request access by email.
 
-The portal runs alongside the existing per-application mTLS ingresses, which
-remain unchanged for machine-to-machine API access. Each application gets its
-own path prefix on the portal ingress (e.g. `/dds-proxy/`, `/aura/`), and the
-ingress rewrites the path before forwarding to the backend service.
+The portal sits behind oauth2-proxy, which authenticates the user and forwards
+their identity and group membership (`X-Auth-Request-User`, `-Email`, `-Groups`).
 
 ## Project ANA-GRAM
 
@@ -32,56 +31,107 @@ Group, under guidance of the ANA Engineering and ANA Planning Groups.
 
 ## Architecture
 
-The portal sits in front of the existing NSI applications and provides
-OIDC-authenticated browser access to their UI endpoints:
+The portal is a FastAPI app served by uvicorn. oauth2-proxy authenticates browser
+users and forwards `X-Auth-Request-*` headers; the app derives the user's role from
+their group membership and renders the portal accordingly.
 
 ```
 Browser
-  │
-  ├── https://mgmt-info.dev.automation.surf.net/
-  │     └── oauth2-proxy (OIDC) → ana-automation-ui (landing page)
-  │
-  ├── https://mgmt-info.dev.automation.surf.net/dds-proxy/
-  │     └── oauth2-proxy (OIDC) → nsi-dds-proxy (rewrite /dds-proxy/… → /…)
-  │
-  ├── https://mgmt-info.dev.automation.surf.net/aura/
-  │     └── oauth2-proxy (OIDC) → nsi-aura (rewrite /aura/… → /…)
-  │
-  └── ...
+  │  https://<portal-host>/
+  └── oauth2-proxy (OIDC) ──► ana-automation-ui (FastAPI portal)
+            └── forwards X-Auth-Request-User / -Email / -Groups
 ```
 
-The existing mTLS ingresses continue to serve API traffic on their original
-hostnames (e.g. `dds-proxy.dev.automation.surf.net`).
+Backend applications are reached through path prefixes on the portal host (e.g.
+`/aura/`, `/dds/`), each routed to its service with the prefix stripped. The
+existing per-application mTLS ingresses continue to serve API traffic on their own
+hostnames, unchanged.
 
-## Prerequisites
+### Routing is up to you
 
-- Docker (for building the container image)
-- A Kubernetes cluster with nginx ingress controller
-- oauth2-proxy deployed for OIDC authentication
-- cert-manager for TLS certificate provisioning
+The chart deploys the app (Deployment, Service) and its configuration, but **how
+you route traffic and enforce auth is your choice**. Both chart-provided routing
+templates are disabled by default; pick one of:
 
-## Running Locally
+1. **Chart nginx Ingress** — set `ingress.enabled=true` and configure `ingress`
+   plus `backends` (per-backend Ingresses with path rewriting and oauth2-proxy
+   auth annotations).
+2. **Chart Gateway API HTTPRoute** — set `httpRoute.enabled=true` and configure
+   `httpRoute.routes`.
+3. **Completely external configuration** — manage routing, oauth2-proxy auth, path
+   rewrites and group enforcement outside the chart, with whatever ingress controller
+   or gateway you run (for example an nginx or Traefik gateway with oauth2-proxy
+   forward-auth).
 
-### With Docker
+Whichever you choose, oauth2-proxy must forward `X-Auth-Request-Groups`, and the
+routing layer should strip inbound `X-Auth-Request-*` headers from the client
+before oauth2-proxy sets them, so they cannot be spoofed.
 
-Build and run the container:
+## Access model
+
+| Group | Access |
+|-------|--------|
+| `operators` | read-write — may open every app |
+| `users` | read-only — may open the non-operator apps |
+| neither | may only load the portal to see greyed cards and request access |
+
+The portal greys out cards a user cannot open and shows a `USERS` / `OPERATORS`
+badge per app. **This greying is cosmetic** — the real gate is the routing layer
+(e.g. oauth2-proxy `allowed_groups`), which returns 403 if a user opens a restricted
+app directly. Keep each app's `requiredGroup` in step with the routing enforcement.
+
+## Configuration
+
+The app reads settings from environment variables, or from a local
+`ana-automation-ui.env` file (see `ana-automation-ui.env.example`). Real environment
+variables take precedence over the file.
+
+| Variable | Purpose |
+|----------|---------|
+| `HOST`, `PORT` | uvicorn bind address (default `0.0.0.0:8080`) |
+| `USERS_GROUP`, `OPERATORS_GROUP` | OIDC group names (default `users` / `operators`) |
+| `APPS_CONFIG_PATH` | apps JSON path (default `/config/apps.json`; falls back to the bundled list) |
+| `EMAIL_ENABLED` | enable the access-request email feature |
+| `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURITY` | SMTP relay (`SMTP_SECURITY`: `none` / `starttls` / `tls`) |
+| `SMTP_USERNAME`, `SMTP_PASSWORD` | optional SMTP auth |
+| `ACCESS_REQUEST_RECIPIENT` | where access requests are sent |
+| `ACCESS_REQUEST_FROM` | fixed sender address |
+| `ACCESS_REQUEST_FROM_USER` | send From the requester's email instead (default `false`) |
+
+The portal app list is configured via `portal.apps` (rendered into a ConfigMap
+mounted at `/config/apps.json`); when empty, the image's bundled default list is
+used. Each entry: `name`, `description`, `url`, `requiredGroup` (empty = any
+authenticated user), `comingSoon`.
+
+## Running locally
+
+With uv:
+
+```bash
+uv sync
+uv run ana-automation-ui          # serves http://localhost:8080
+```
+
+Simulate oauth2-proxy headers to see the group-aware rendering:
+
+```bash
+curl -s http://localhost:8080/ -H 'X-Auth-Request-Groups: operators'
+```
+
+With Docker (two-stage uv wheel build):
 
 ```bash
 docker build -t ana-automation-ui .
 docker run --rm -p 8080:8080 ana-automation-ui
 ```
 
-Then open http://localhost:8080 in your browser.
-
-A pre-built image is available on the GitHub Container Registry:
+A pre-built image is published to the GitHub Container Registry:
 
 ```
 ghcr.io/workfloworchestrator/ana-automation-ui:main
 ```
 
-### With Helm chart
-
-Install the chart with a custom values file:
+### With the Helm chart
 
 ```shell
 helm upgrade --install --namespace development \
@@ -94,82 +144,33 @@ Example `values.yaml`:
 image:
   repository: ghcr.io/workfloworchestrator/ana-automation-ui
   tag: main
-ingress:
+groups:
+  users: users
+  operators: operators
+portal:
+  apps:
+    - name: AuRA
+      description: NSI user provider agent for managing reservations.
+      url: /aura/
+      requiredGroup: operators
+    - name: DDS
+      description: Topology document registry.
+      url: /dds/portal
+email:
   enabled: true
-  className: nginx-development
-  host: mgmt-info.dev.automation.surf.net
-  annotations:
-    cert-manager.io/issuer: harica
-    nginx.ingress.kubernetes.io/auth-url: "http://oauth2-proxy.development.svc.cluster.local/oauth2/auth"
-    nginx.ingress.kubernetes.io/auth-signin: "https://mgmt-info.dev.automation.surf.net/oauth2/start?rd=$escaped_request_uri"
-    nginx.ingress.kubernetes.io/auth-response-headers: "X-Auth-Request-User,X-Auth-Request-Email"
-  tls:
-    - secretName: tls-mgmt-info.dev.automation.surf.net
-      hosts:
-        - mgmt-info.dev.automation.surf.net
-backends:
-  - name: dds-proxy
-    serviceName: development-nsi-dds-proxy
-    servicePort: 80
+  recipient: ops@example.org
+  from: portal@example.org
+  smtp:
+    host: mailrelay.internal
+    port: 25
+# Routing: enable one of ingress / httpRoute, or configure it externally (see above).
 ```
 
-## Backend Routing
+## Development
 
-Each backend application is exposed under a path prefix on the portal ingress.
-The prefix is stripped before forwarding to the backend service, so applications
-do not need to be aware of their path prefix.
-
-Each backend gets its own Ingress resource because the nginx ingress controller
-applies `rewrite-target` at the Ingress level, not per-path.
-
-To add a new backend, add an entry to the `backends` list in `values.yaml`:
-
-```yaml
-backends:
-  - name: my-app
-    serviceName: development-my-app
-    servicePort: 80
+```bash
+uv run ruff check .
+uv run ruff format --check .
+uv run mypy app
+uv run pytest
 ```
-
-This creates an Ingress that routes `/my-app/(.*)` to the backend service with
-the prefix stripped.
-
-### Preserving the path prefix
-
-Some backends already include the path prefix in their routes (e.g. DDS serves
-all endpoints under `/dds/`). For these, set `rewriteTarget` to preserve the
-prefix instead of stripping it:
-
-```yaml
-backends:
-  - name: dds
-    serviceName: development-nsi-dds
-    servicePort: 80
-    rewriteTarget: "/dds/$1"
-```
-
-### Per-backend annotations
-
-Backends can specify additional annotations that are merged with the shared
-ingress annotations. This is useful for server-rendered applications (like Play
-or Rails apps) whose HTML contains absolute paths that need rewriting. For
-example, Safnari uses nginx `sub_filter` to rewrite paths in HTML responses:
-
-```yaml
-backends:
-  - name: safnari
-    serviceName: development-nsi-safnari
-    servicePort: 80
-    annotations:
-      nginx.ingress.kubernetes.io/configuration-snippet: |
-        sub_filter_once off;
-        sub_filter_types text/html;
-        sub_filter 'href="/' 'href="/safnari/';
-        sub_filter 'src="/' 'src="/safnari/';
-        proxy_set_header Accept-Encoding "";
-```
-
-This approach works well for applications with simple server-rendered HTML (no
-AJAX or JavaScript-generated URLs). Applications with JavaScript-driven UIs
-(like FastAPI's Swagger docs) should use their framework's root path support
-instead.

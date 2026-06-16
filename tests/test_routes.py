@@ -30,6 +30,18 @@ def test_health_body():
     assert client.get("/health").text == "OK"
 
 
+@pytest.mark.parametrize("path", [pytest.param("/", id="index"), pytest.param("/health", id="health")])
+def test_security_headers(path):
+    headers = client.get(path).headers
+    csp = headers["content-security-policy"]
+    assert "default-src 'self'" in csp
+    assert "script-src 'self'" in csp
+    assert "frame-ancestors 'none'" in csp
+    assert headers["x-content-type-options"] == "nosniff"
+    assert headers["x-frame-options"] == "DENY"
+    assert headers["referrer-policy"] == "same-origin"
+
+
 OPERATOR_HEADERS = {"X-Auth-Request-User": "op", "X-Auth-Request-Groups": "operators"}
 USER_HEADERS = {"X-Auth-Request-User": "usr", "X-Auth-Request-Groups": "users"}
 
