@@ -34,3 +34,20 @@ spec:
           resources:
             {{- toYaml . | nindent 12 }}
           {{- end }}
+          {{- if .Values.secretProviderClass.enabled }}
+          volumeMounts:
+            - name: secret-store
+              mountPath: /mnt/secrets-store
+              readOnly: true
+          {{- end }}
+      {{- if .Values.secretProviderClass.enabled }}
+      volumes:
+        - name: secret-store
+          csi:
+            driver: secrets-store.csi.k8s.io
+            readOnly: true
+            volumeAttributes:
+              secretProviderClass: {{ .Release.Name }}-secretproviderclass
+            nodePublishSecretRef:
+              name: {{ .Values.secretProviderClass.nodePublishSecretRefName }}
+      {{- end }}

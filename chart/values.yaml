@@ -88,3 +88,21 @@ httpRoute:
     #         - path:
     #             type: PathPrefix
     #             value: /oauth2
+
+# Azure Key Vault integration via the Secrets Store CSI driver.
+# When enabled, a SecretProviderClass is created and a CSI volume is mounted
+# on the pod (triggering the driver to sync). The synced Kubernetes Secret is
+# named "<release>-secret" and consumed by oauth2-proxy via existingSecret.
+secretProviderClass:
+  enabled: false
+  provider: azure
+  keyVaultName: ""
+  tenantId: ""
+  nodePublishSecretRefName: "kv-sp-secret"
+  objects: []
+    # - key: client-id
+    #   objectName: ana-automation-ui-development-oidc-client-id
+    # - key: client-secret
+    #   objectName: ana-automation-ui-development-oidc-client-secret
+    # - key: cookie-secret
+    #   objectName: ana-automation-ui-development-cookie-secret
