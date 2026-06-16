@@ -8,8 +8,7 @@
   {
     "name": "Safnari",
     "description": "NSI Connection Service aggregator - manages and monitors NSI connections across multiple network domains.",
-    "url": "/safnari/",
-    "requiredGroup": "operators"
+    "url": "/safnari/"
   },
   {
     "name": "DDS",
@@ -19,12 +18,14 @@
   {
     "name": "DDS Proxy",
     "description": "REST API proxy for the DDS - provides a simplified interface to query topologies, STPs, and SDPs.",
-    "url": "/dds-proxy/docs"
+    "url": "/dds-proxy/docs",
+    "requiredGroup": "operators"
   },
   {
     "name": "Aggregator Proxy",
     "description": "REST proxy for the NSI aggregator - exposes a simplified connection state-machine on top of NSI.",
-    "url": "/aggregator-proxy/docs"
+    "url": "/aggregator-proxy/docs",
+    "requiredGroup": "operators"
   },
   {
     "name": "Orchestrator",
