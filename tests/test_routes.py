@@ -2,8 +2,8 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app import main
-from app.config import get_settings
-from app.main import app
+from app.config import Settings, get_settings
+from app.main import _access_request_limiter, app
 
 client = TestClient(app)
 
@@ -74,6 +74,77 @@ def test_index_group_aware(headers, present, absent):
     body = client.get("/", headers=headers).text
     assert all(token in body for token in present)
     assert all(token not in body for token in absent)
+
+
+# --- access-request form + endpoint ----------------------------------------
+
+
+def _override_settings(**kw):
+    def _get() -> Settings:
+        return Settings(_env_file=None, **kw)
+
+    return _get
+
+
+def test_index_shows_request_form_for_no_group():
+    app.dependency_overrides[get_settings] = _override_settings(email_enabled=True)
+    try:
+        body = client.get("/").text
+        assert "Request access" in body
+        assert 'action="/request-access"' in body
+    finally:
+        app.dependency_overrides.clear()
+
+
+def test_index_hides_request_form_when_email_disabled():
+    assert "Request access" not in client.get("/").text
+
+
+def test_index_hides_request_form_for_operator():
+    app.dependency_overrides[get_settings] = _override_settings(email_enabled=True)
+    try:
+        assert "Request access" not in client.get("/", headers=OPERATOR_HEADERS).text
+    finally:
+        app.dependency_overrides.clear()
+
+
+def test_request_access_404_when_disabled():
+    assert client.post("/request-access", data={"message": "hi"}).status_code == 404
+
+
+def test_request_access_sends_email(monkeypatch):
+    sent = {}
+
+    async def fake_send(user, email, message, settings):
+        sent.update(user=user, email=email, message=message)
+
+    monkeypatch.setattr("app.main.send_access_request", fake_send)
+    app.dependency_overrides[get_settings] = _override_settings(
+        email_enabled=True, access_request_recipient="ops@x", access_request_from="p@x"
+    )
+    try:
+        response = client.post(
+            "/request-access",
+            data={"message": "please"},
+            headers={"X-Auth-Request-User": "carol", "X-Auth-Request-Email": "carol@x"},
+        )
+        assert response.status_code == 200
+        assert "sent" in response.text.lower()
+        assert sent == {"user": "carol", "email": "carol@x", "message": "please"}
+    finally:
+        app.dependency_overrides.clear()
+
+
+def test_request_access_rate_limited(monkeypatch):
+    monkeypatch.setattr(_access_request_limiter, "allow", lambda key: False)
+    app.dependency_overrides[get_settings] = _override_settings(
+        email_enabled=True, access_request_recipient="ops@x", access_request_from="p@x"
+    )
+    try:
+        response = client.post("/request-access", data={}, headers={"X-Auth-Request-User": "x"})
+        assert response.status_code == 429
+    finally:
+        app.dependency_overrides.clear()
 
 
 # --- unhappy paths ---------------------------------------------------------
