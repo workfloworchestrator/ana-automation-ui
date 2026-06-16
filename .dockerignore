@@ -1,0 +1,10 @@
+.venv
+dist
+**/__pycache__
+*.pyc
+.git
+.github
+chart
+tests
+artwork
+*.md
