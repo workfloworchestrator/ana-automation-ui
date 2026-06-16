@@ -1,10 +1,13 @@
 from pathlib import Path
+from typing import Annotated
 
-from fastapi import FastAPI, Request
+from fastapi import Depends, FastAPI, Request
 from fastapi.responses import HTMLResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
+from app.apps import app_views, load_apps
+from app.auth import CurrentUser, get_current_user
 from app.config import get_settings
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -26,9 +29,11 @@ async def health() -> str:
 
 
 @app.get("/", response_class=HTMLResponse)
-async def index(request: Request) -> HTMLResponse:
-    """Render the portal landing page."""
-    return templates.TemplateResponse(request, "index.html")
+async def index(request: Request, user: Annotated[CurrentUser, Depends(get_current_user)]) -> HTMLResponse:
+    """Render the portal landing page with group-aware app stations."""
+    settings = get_settings()
+    views = app_views(load_apps(settings.apps_config_path), user.role, settings)
+    return templates.TemplateResponse(request, "index.html", {"user": user, "apps": views})
 
 
 def run() -> None:

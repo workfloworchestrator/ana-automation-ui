@@ -107,6 +107,28 @@ secretProviderClass:
     # - key: cookie-secret
     #   objectName: ana-automation-ui-development-cookie-secret
 
+# OIDC group names forwarded by oauth2-proxy (X-Auth-Request-Groups). The portal uses
+# these to decide which apps a user may open; operators is a superset of users.
+groups:
+  users: users
+  operators: operators
+
+# Portal apps shown on the landing page. Rendered into a ConfigMap and mounted at
+# /config/apps.json; when empty, the image's bundled default app list is used.
+# requiredGroup must match the ingress enforcement for that backend (see backends).
+portal:
+  apps: []
+    # - name: AuRA
+    #   description: NSI user provider agent for managing reservations.
+    #   url: /aura/
+    #   requiredGroup: operators
+    # - name: DDS
+    #   description: Topology document registry.
+    #   url: /dds/portal
+    # - name: Orchestrator
+    #   description: Lifecycle management of multi-domain services.
+    #   comingSoon: true
+
 # Access-request email feature. When enabled, a signed-in user who is in neither the
 # users nor operators group can email a request for access to "recipient" via the
 # cluster SMTP relay. By default the mail is sent from a fixed authenticated sender

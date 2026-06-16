@@ -1,0 +1,11 @@
+{{- if .Values.portal.apps }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "ana-automation-ui.fullname" . }}-apps
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "ana-automation-ui.labels" . | nindent 4 }}
+data:
+  apps.json: {{ .Values.portal.apps | toJson | quote }}
+{{- end }}

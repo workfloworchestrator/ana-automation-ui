@@ -48,6 +48,10 @@ spec:
             - name: ACCESS_REQUEST_FROM_USER
               value: {{ .Values.email.fromUser | quote }}
             {{- end }}
+            - name: USERS_GROUP
+              value: {{ .Values.groups.users | quote }}
+            - name: OPERATORS_GROUP
+              value: {{ .Values.groups.operators | quote }}
           ports:
             - name: http
               containerPort: 8080
@@ -64,14 +68,27 @@ spec:
           resources:
             {{- toYaml . | nindent 12 }}
           {{- end }}
-          {{- if .Values.secretProviderClass.enabled }}
+          {{- if or .Values.portal.apps .Values.secretProviderClass.enabled }}
           volumeMounts:
+            {{- if .Values.portal.apps }}
+            - name: apps-config
+              mountPath: /config
+              readOnly: true
+            {{- end }}
+            {{- if .Values.secretProviderClass.enabled }}
             - name: secret-store
               mountPath: /mnt/secrets-store
               readOnly: true
+            {{- end }}
           {{- end }}
-      {{- if .Values.secretProviderClass.enabled }}
+      {{- if or .Values.portal.apps .Values.secretProviderClass.enabled }}
       volumes:
+        {{- if .Values.portal.apps }}
+        - name: apps-config
+          configMap:
+            name: {{ include "ana-automation-ui.fullname" . }}-apps
+        {{- end }}
+        {{- if .Values.secretProviderClass.enabled }}
         - name: secret-store
           csi:
             driver: secrets-store.csi.k8s.io
@@ -80,4 +97,5 @@ spec:
               secretProviderClass: {{ .Release.Name }}-secretproviderclass
             nodePublishSecretRef:
               name: {{ .Values.secretProviderClass.nodePublishSecretRefName }}
+        {{- end }}
       {{- end }}

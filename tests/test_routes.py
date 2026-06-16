@@ -29,19 +29,51 @@ def test_health_body():
     assert client.get("/health").text == "OK"
 
 
+OPERATOR_HEADERS = {"X-Auth-Request-User": "op", "X-Auth-Request-Groups": "operators"}
+USER_HEADERS = {"X-Auth-Request-User": "usr", "X-Auth-Request-Groups": "users"}
+
+
 @pytest.mark.parametrize(
     "needle",
     [
         pytest.param("<title>ANA Management Portal</title>", id="title"),
         pytest.param("/static/ana-logo.png", id="logo-src"),
-        pytest.param("/aura/", id="aura-link"),
-        pytest.param("/safnari/", id="safnari-link"),
-        pytest.param("/dds/portal", id="dds-link"),
-        pytest.param("Coming Soon", id="coming-soon"),
+        pytest.param("AuRA", id="aura-name"),
+        pytest.param("Orchestrator", id="orchestrator-name"),
+        pytest.param("Coming soon", id="coming-soon"),
     ],
 )
 def test_index_contains(needle):
     assert needle in client.get("/").text
+
+
+@pytest.mark.parametrize(
+    ("headers", "present", "absent"),
+    [
+        pytest.param(
+            OPERATOR_HEADERS,
+            ('href="/aura/"', 'href="/dds/portal"'),
+            ("OPERATORS ONLY",),
+            id="operator-opens-all",
+        ),
+        pytest.param(
+            USER_HEADERS,
+            ('href="/dds/portal"', "OPERATORS ONLY"),
+            ('href="/aura/"',),
+            id="user-locked-out-of-operator-apps",
+        ),
+        pytest.param(
+            {},
+            ("OPERATORS ONLY", "USERS ONLY"),
+            ('href="/aura/"', 'href="/dds/portal"'),
+            id="anonymous-all-locked",
+        ),
+    ],
+)
+def test_index_group_aware(headers, present, absent):
+    body = client.get("/", headers=headers).text
+    assert all(token in body for token in present)
+    assert all(token not in body for token in absent)
 
 
 # --- unhappy paths ---------------------------------------------------------
