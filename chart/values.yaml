@@ -55,3 +55,36 @@ resources: {}
   # requests:
   #   cpu: 10m
   #   memory: 32Mi
+
+# HTTPRoute resources (Envoy Gateway / Gateway API).
+# Each entry in `routes` renders a separate HTTPRoute resource, so policies
+# can target individual routes. `nameSuffix` is appended to the fullname for
+# all routes after the first (the primary route omits it).
+httpRoute:
+  enabled: false
+  routes: []
+    # - parentRefs:
+    #     - name: gateway
+    #       sectionName: http
+    #   hostnames:
+    #     - chart-example.local
+    #   rules:
+    #     - matches:
+    #         - path:
+    #             type: PathPrefix
+    #             value: /
+    #       backendRefs:
+    #         - name: some-backend
+    #           port: 80
+    #           weight: 1
+    # - nameSuffix: oauth2
+    #   parentRefs:
+    #     - name: gateway
+    #       sectionName: http
+    #   hostnames:
+    #     - chart-example.local
+    #   rules:
+    #     - matches:
+    #         - path:
+    #             type: PathPrefix
+    #             value: /oauth2
