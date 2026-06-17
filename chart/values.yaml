@@ -8,6 +8,11 @@ image:
 nameOverride: ""
 fullnameOverride: ""
 
+# Extra annotations for the pod template. Useful in a service mesh — e.g. to keep
+# Linkerd from delaying server-speaks-first SMTP, bypass the proxy for the relay port:
+#   config.linkerd.io/skip-outbound-ports: "26"
+podAnnotations: {}
+
 service:
   type: ClusterIP
   port: 80
