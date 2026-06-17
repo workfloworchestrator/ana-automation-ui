@@ -1,3 +1,4 @@
+import aiosmtplib
 import pytest
 
 from app.config import Settings
@@ -11,32 +12,43 @@ def _settings(**kw):
 # --- message building ------------------------------------------------------
 
 
-def test_build_message_fixed_from_with_reply_to():
+def test_build_message_subject_and_headers():
     settings = _settings(access_request_recipient="ops@example.org", access_request_from="portal@example.org")
-    msg = build_message("alice", "alice@example.org", "please add me", settings)
+    msg = build_message("sub-123", "alice@example.org", "please add me", ["urn:x:users"], settings)
     assert msg["From"] == "portal@example.org"
     assert msg["To"] == "ops@example.org"
     assert msg["Reply-To"] == "alice@example.org"
-    assert "alice" in msg["Subject"]
+    assert msg["Subject"] == "ANA management portal access request from alice@example.org"
     assert "please add me" in msg.get_content()
+
+
+def test_build_message_body_has_groups_not_user():
+    settings = _settings(access_request_recipient="ops@x", access_request_from="p@x")
+    body = build_message("sub-123", "alice@example.org", "hi", ["urn:b", "urn:a"], settings).get_content()
+    assert "Email:  alice@example.org" in body
+    assert "Groups: urn:a, urn:b" in body  # sorted
+    assert "User:" not in body
+    assert "sub-123" not in body
+
+
+def test_build_message_groups_none_when_empty():
+    settings = _settings(access_request_recipient="ops@x", access_request_from="p@x")
+    assert "Groups: none" in build_message("sub", "a@x", "hi", [], settings).get_content()
 
 
 def test_build_message_from_user_opt_in():
     settings = _settings(access_request_from="portal@x", access_request_from_user=True)
-    msg = build_message("alice", "alice@example.org", "hi", settings)
-    assert msg["From"] == "alice@example.org"
+    assert build_message("sub", "alice@example.org", "hi", [], settings)["From"] == "alice@example.org"
 
 
 def test_build_message_from_user_falls_back_without_email():
     settings = _settings(access_request_from="portal@x", access_request_from_user=True)
-    msg = build_message("alice", "", "hi", settings)
-    assert msg["From"] == "portal@x"
+    assert build_message("sub", "", "hi", [], settings)["From"] == "portal@x"
 
 
 def test_build_message_allows_multiline_body():
     settings = _settings(access_request_recipient="ops@x", access_request_from="p@x")
-    msg = build_message("alice", "a@x", "line one\nline two", settings)
-    assert "line one\nline two" in msg.get_content()
+    assert "line one\nline two" in build_message("sub", "a@x", "line one\nline two", [], settings).get_content()
 
 
 @pytest.mark.parametrize(
@@ -49,10 +61,7 @@ def test_build_message_allows_multiline_body():
 def test_build_message_rejects_header_injection(user, email):
     settings = _settings(access_request_recipient="ops@x", access_request_from="p@x")
     with pytest.raises(InvalidRequest):
-        build_message(user, email, "msg", settings)
-
-
-# --- connection mode -------------------------------------------------------
+        build_message(user, email, "msg", [], settings)
 
 
 @pytest.mark.parametrize(
@@ -67,6 +76,9 @@ def test_tls_flags(security, expected):
     assert _tls_flags(security) == expected
 
 
+# --- delivery, retry, logging ----------------------------------------------
+
+
 async def test_send_access_request_passes_smtp_settings(monkeypatch):
     captured = {}
 
@@ -76,16 +88,51 @@ async def test_send_access_request_passes_smtp_settings(monkeypatch):
 
     monkeypatch.setattr("app.mail.aiosmtplib.send", fake_send)
     settings = _settings(
-        email_enabled=True,
         smtp_host="mail.svc",
-        smtp_port=587,
+        smtp_port=26,
         smtp_security="starttls",
         access_request_recipient="ops@x",
         access_request_from="p@x",
     )
-    await send_access_request("alice", "a@x", "hi", settings)
+    await send_access_request("sub", "a@x", "hi", ["urn:g"], settings)
     assert captured["hostname"] == "mail.svc"
-    assert captured["port"] == 587
+    assert captured["port"] == 26
     assert captured["start_tls"] is True
-    assert captured["use_tls"] is False
     assert captured["message"]["To"] == "ops@x"
+
+
+async def test_send_access_request_retries_then_succeeds(monkeypatch):
+    calls = {"n": 0}
+
+    async def flaky_send(message, **kwargs):
+        calls["n"] += 1
+        if calls["n"] < 3:
+            raise aiosmtplib.SMTPException("temporary")
+
+    monkeypatch.setattr("app.mail.aiosmtplib.send", flaky_send)
+    settings = _settings(access_request_recipient="ops@x", access_request_from="p@x")
+    await send_access_request("sub", "a@x", "hi", [], settings, attempts=3, delay=0)
+    assert calls["n"] == 3
+
+
+async def test_send_access_request_raises_after_exhausting_retries(monkeypatch):
+    async def always_fail(message, **kwargs):
+        raise aiosmtplib.SMTPException("relay down")
+
+    monkeypatch.setattr("app.mail.aiosmtplib.send", always_fail)
+    settings = _settings(access_request_recipient="ops@x", access_request_from="p@x")
+    with pytest.raises(aiosmtplib.SMTPException):
+        await send_access_request("sub", "a@x", "hi", [], settings, attempts=2, delay=0)
+
+
+async def test_send_access_request_logs_success(monkeypatch, caplog):
+    async def ok_send(message, **kwargs):
+        return None
+
+    monkeypatch.setattr("app.mail.aiosmtplib.send", ok_send)
+    settings = _settings(
+        smtp_host="mail.svc", smtp_port=26, access_request_recipient="ops@x", access_request_from="p@x"
+    )
+    with caplog.at_level("INFO", logger="app.mail"):
+        await send_access_request("sub", "a@x", "hi", [], settings, attempts=1, delay=0)
+    assert any("Access-request email sent" in record.message for record in caplog.records)

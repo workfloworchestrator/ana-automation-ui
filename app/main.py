@@ -78,7 +78,7 @@ async def request_access(
     if not _access_request_limiter.allow(user.user or user.email or "anonymous"):
         raise HTTPException(status_code=429, detail="Too many requests, please try again later.")
     try:
-        await send_access_request(user.user, user.email, message, settings)
+        await send_access_request(user.user, user.email, message, user.groups, settings)
     except InvalidRequest as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     return templates.TemplateResponse(request, "request_sent.html", {"user": user})
@@ -86,7 +86,11 @@ async def request_access(
 
 def run() -> None:
     """Start uvicorn for the ana-automation-ui console command."""
+    import logging
+
     import uvicorn
 
+    logging.basicConfig(level=logging.WARNING)
+    logging.getLogger("app").setLevel(logging.INFO)
     settings = get_settings()
     uvicorn.run(app, host=settings.host, port=settings.port)

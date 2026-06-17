@@ -128,8 +128,8 @@ def test_request_access_404_when_disabled():
 def test_request_access_sends_email(monkeypatch):
     sent = {}
 
-    async def fake_send(user, email, message, settings):
-        sent.update(user=user, email=email, message=message)
+    async def fake_send(user, email, message, groups, settings):
+        sent.update(user=user, email=email, message=message, groups=sorted(groups))
 
     monkeypatch.setattr("app.main.send_access_request", fake_send)
     app.dependency_overrides[get_settings] = _override_settings(
@@ -139,11 +139,15 @@ def test_request_access_sends_email(monkeypatch):
         response = client.post(
             "/request-access",
             data={"message": "please"},
-            headers={"X-Auth-Request-User": "carol", "X-Auth-Request-Email": "carol@x"},
+            headers={
+                "X-Auth-Request-User": "carol",
+                "X-Auth-Request-Email": "carol@x",
+                "X-Auth-Request-Groups": "g2,g1",
+            },
         )
         assert response.status_code == 200
         assert "sent" in response.text.lower()
-        assert sent == {"user": "carol", "email": "carol@x", "message": "please"}
+        assert sent == {"user": "carol", "email": "carol@x", "message": "please", "groups": ["g1", "g2"]}
     finally:
         app.dependency_overrides.clear()
 
