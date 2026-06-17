@@ -1,5 +1,6 @@
 import aiosmtplib
 import pytest
+import structlog
 
 from app.config import Settings
 from app.mail import InvalidRequest, _tls_flags, build_message, send_access_request
@@ -120,12 +121,16 @@ async def test_send_access_request_raises_after_exhausting_retries(monkeypatch):
         raise aiosmtplib.SMTPException("relay down")
 
     monkeypatch.setattr("app.mail.aiosmtplib.send", always_fail)
-    settings = _settings(access_request_recipient="ops@x", access_request_from="p@x")
-    with pytest.raises(aiosmtplib.SMTPException):
+    settings = _settings(
+        smtp_host="mail.svc", smtp_port=26, access_request_recipient="ops@x", access_request_from="p@x"
+    )
+    with structlog.testing.capture_logs() as logs, pytest.raises(aiosmtplib.SMTPException):
         await send_access_request("sub", "a@x", "hi", [], settings, attempts=2, delay=0)
+    failed = [entry for entry in logs if entry["event"] == "Access-request email delivery failed"]
+    assert failed and failed[0]["relay"] == "mail.svc:26"
 
 
-async def test_send_access_request_logs_success(monkeypatch, caplog):
+async def test_send_access_request_logs_success(monkeypatch):
     async def ok_send(message, **kwargs):
         return None
 
@@ -133,6 +138,7 @@ async def test_send_access_request_logs_success(monkeypatch, caplog):
     settings = _settings(
         smtp_host="mail.svc", smtp_port=26, access_request_recipient="ops@x", access_request_from="p@x"
     )
-    with caplog.at_level("INFO", logger="app.mail"):
+    with structlog.testing.capture_logs() as logs:
         await send_access_request("sub", "a@x", "hi", [], settings, attempts=1, delay=0)
-    assert any("Access-request email sent" in record.message for record in caplog.records)
+    sent = [entry for entry in logs if entry["event"] == "Access-request email sent"]
+    assert sent and sent[0]["recipient"] == "ops@x" and sent[0]["relay"] == "mail.svc:26"

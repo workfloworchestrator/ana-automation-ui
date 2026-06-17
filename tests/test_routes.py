@@ -1,9 +1,11 @@
 import pytest
+import structlog
 from fastapi.testclient import TestClient
 
 from app import main
 from app.config import Settings, get_settings
-from app.main import _access_request_limiter, app
+from app.mail import InvalidRequest
+from app.main import _access_request_limiter, _log_startup_diagnostics, app
 
 client = TestClient(app)
 
@@ -158,10 +160,66 @@ def test_request_access_rate_limited(monkeypatch):
         email_enabled=True, access_request_recipient="ops@x", access_request_from="p@x"
     )
     try:
-        response = client.post("/request-access", data={}, headers={"X-Auth-Request-User": "x"})
+        with structlog.testing.capture_logs() as logs:
+            response = client.post("/request-access", data={}, headers={"X-Auth-Request-User": "x"})
         assert response.status_code == 429
+        assert any(entry["event"] == "Access request rate limited" for entry in logs)
     finally:
         app.dependency_overrides.clear()
+
+
+def test_request_access_invalid_input_logs_and_400(monkeypatch):
+    async def boom(*args, **kwargs):
+        raise InvalidRequest("Invalid character in email")
+
+    monkeypatch.setattr("app.main.send_access_request", boom)
+    app.dependency_overrides[get_settings] = _override_settings(
+        email_enabled=True, access_request_recipient="ops@x", access_request_from="p@x"
+    )
+    try:
+        with structlog.testing.capture_logs() as logs:
+            response = client.post("/request-access", data={"message": "hi"}, headers={"X-Auth-Request-User": "x"})
+        assert response.status_code == 400
+        assert any(entry["event"] == "Rejected access request with invalid input" for entry in logs)
+    finally:
+        app.dependency_overrides.clear()
+
+
+@pytest.mark.parametrize(
+    ("apps_present", "info_logged"),
+    [pytest.param(True, False, id="present"), pytest.param(False, True, id="missing")],
+)
+def test_startup_diagnostics_apps_fallback(tmp_path, apps_present, info_logged):
+    apps_path = tmp_path / "apps.json"
+    if apps_present:
+        apps_path.write_text("[]")
+    settings = Settings(_env_file=None, apps_config_path=apps_path)
+    with structlog.testing.capture_logs() as logs:
+        _log_startup_diagnostics(settings)
+    logged = any(entry["event"] == "Apps config not found; using bundled default" for entry in logs)
+    assert logged is info_logged
+
+
+@pytest.mark.parametrize(
+    ("email_kwargs", "warned"),
+    [
+        pytest.param({"email_enabled": True}, True, id="enabled-incomplete"),
+        pytest.param(
+            {"email_enabled": True, "smtp_host": "m", "access_request_recipient": "r", "access_request_from": "f"},
+            False,
+            id="enabled-complete",
+        ),
+        pytest.param({"email_enabled": False}, False, id="disabled"),
+    ],
+)
+def test_startup_diagnostics_email_misconfig(tmp_path, email_kwargs, warned):
+    apps_path = tmp_path / "apps.json"
+    apps_path.write_text("[]")
+    settings = Settings(_env_file=None, apps_config_path=apps_path, **email_kwargs)
+    with structlog.testing.capture_logs() as logs:
+        _log_startup_diagnostics(settings)
+    logged = any(entry["event"] == "Email enabled but SMTP not fully configured" for entry in logs)
+    assert logged is warned
 
 
 # --- user menu -------------------------------------------------------------
@@ -242,7 +300,7 @@ def test_run_binds_configured_address(monkeypatch):
     recorded = {}
     monkeypatch.setattr(
         "uvicorn.run",
-        lambda application, host, port: recorded.update(host=host, port=port),
+        lambda application, host, port, **kwargs: recorded.update(host=host, port=port),
     )
     monkeypatch.setenv("HOST", "127.0.0.1")
     monkeypatch.setenv("PORT", "9999")

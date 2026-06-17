@@ -1,15 +1,15 @@
 """Send access-request emails via the cluster SMTP relay."""
 
 import asyncio
-import logging
 from collections.abc import Iterable
 from email.message import EmailMessage
 
 import aiosmtplib
+import structlog
 
 from app.config import Settings, SmtpSecurity
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 _RETRYABLE = (aiosmtplib.SMTPException, OSError)
 _MAX_ATTEMPTS = 3
@@ -59,7 +59,7 @@ async def _deliver(message: EmailMessage, settings: Settings, attempts: int, del
             hostname=settings.smtp_host,
             port=settings.smtp_port,
             username=settings.smtp_username or None,
-            password=settings.smtp_password or None,
+            password=settings.smtp_password.get_secret_value() or None,
             use_tls=use_tls,
             start_tls=start_tls,
         )
@@ -67,10 +67,10 @@ async def _deliver(message: EmailMessage, settings: Settings, attempts: int, del
         if attempts <= 1:
             raise
         logger.warning(
-            "Access-request email delivery failed (%s); retrying in %ss (%d attempt(s) left)",
-            exc,
-            delay,
-            attempts - 1,
+            "Access-request email delivery failed, retrying",
+            error=str(exc),
+            retry_delay=delay,
+            attempts_left=attempts - 1,
         )
         await asyncio.sleep(delay)
         await _deliver(message, settings, attempts - 1, delay)
@@ -87,11 +87,19 @@ async def send_access_request(
 ) -> None:
     """Build and send the access-request email, retrying transient delivery failures."""
     msg = build_message(user, email, message, groups, settings)
-    await _deliver(msg, settings, attempts, delay)
+    try:
+        await _deliver(msg, settings, attempts, delay)
+    except _RETRYABLE as exc:
+        logger.error(
+            "Access-request email delivery failed",
+            requester=email or user or "unknown",
+            relay=f"{settings.smtp_host}:{settings.smtp_port}",
+            error=str(exc),
+        )
+        raise
     logger.info(
-        "Access-request email sent for %s to %s via %s:%s",
-        email or user or "unknown",
-        settings.access_request_recipient,
-        settings.smtp_host,
-        settings.smtp_port,
+        "Access-request email sent",
+        requester=email or user or "unknown",
+        recipient=settings.access_request_recipient,
+        relay=f"{settings.smtp_host}:{settings.smtp_port}",
     )

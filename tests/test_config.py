@@ -8,6 +8,7 @@ from app.config import Settings
 ENV_KEYS = (
     "HOST",
     "PORT",
+    "LOG_LEVEL",
     "EMAIL_ENABLED",
     "SMTP_HOST",
     "SMTP_PORT",
@@ -99,3 +100,11 @@ def test_invalid_env_raises(clean_env, env):
     [clean_env.setenv(key, value) for key, value in env.items()]
     with pytest.raises(ValidationError):
         Settings(_env_file=None)
+
+
+def test_smtp_password_is_masked_but_readable(clean_env):
+    clean_env.setenv("SMTP_PASSWORD", "s3cret")
+    settings = Settings(_env_file=None)
+    assert settings.smtp_password.get_secret_value() == "s3cret"
+    assert settings.model_dump(mode="json")["smtp_password"] == "**********"  # noqa: S105
+    assert "s3cret" not in repr(settings)

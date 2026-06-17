@@ -2,6 +2,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Literal
 
+from pydantic import SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 SmtpSecurity = Literal["none", "starttls", "tls"]
@@ -19,6 +20,7 @@ class Settings(BaseSettings):
     # Address uvicorn binds to when started via the console script.
     host: str = "0.0.0.0"  # noqa: S104
     port: int = 8080
+    log_level: str = "info"
 
     # Access-request email feature (point 5). Inert while disabled.
     email_enabled: bool = False
@@ -26,7 +28,7 @@ class Settings(BaseSettings):
     smtp_port: int = 25
     smtp_security: SmtpSecurity = "none"
     smtp_username: str = ""
-    smtp_password: str = ""
+    smtp_password: SecretStr = SecretStr("")
     access_request_recipient: str = ""
     access_request_from: str = ""
     access_request_from_user: bool = False

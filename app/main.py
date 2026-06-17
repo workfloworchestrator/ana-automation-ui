@@ -1,7 +1,11 @@
-from collections.abc import Awaitable, Callable
+import importlib.metadata
+import platform
+from collections.abc import AsyncIterator, Awaitable, Callable
+from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Annotated
 
+import structlog
 from fastapi import Depends, FastAPI, Form, HTTPException, Request
 from fastapi.responses import HTMLResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
@@ -11,8 +15,12 @@ from starlette.responses import Response
 from app.apps import app_views, load_apps
 from app.auth import CurrentUser, get_current_user
 from app.config import Settings, get_settings
+from app.logging_config import configure_logging
 from app.mail import InvalidRequest, send_access_request
 from app.ratelimit import RateLimiter
+
+logger = structlog.get_logger(__name__)
+APP_VERSION = importlib.metadata.version("ana-automation-ui")
 
 # Inline styles are still used by the templates, so style-src allows 'unsafe-inline'
 # for now; the redesign moves CSS to static/ and drops it. Scripts stay 'self' only.
@@ -25,11 +33,44 @@ _CONTENT_SECURITY_POLICY = (
 BASE_DIR = Path(__file__).resolve().parent
 templates = Jinja2Templates(directory=BASE_DIR / "templates")
 
+
+def _log_startup_diagnostics(settings: Settings) -> None:
+    if not settings.apps_config_path.is_file():
+        logger.info("Apps config not found; using bundled default", configured_path=str(settings.apps_config_path))
+    if settings.email_enabled and not (
+        settings.smtp_host and settings.access_request_recipient and settings.access_request_from
+    ):
+        logger.warning(
+            "Email enabled but SMTP not fully configured",
+            smtp_host_set=bool(settings.smtp_host),
+            recipient_set=bool(settings.access_request_recipient),
+            from_set=bool(settings.access_request_from),
+        )
+
+
+@asynccontextmanager
+async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
+    """Configure logging and log the startup banner, settings and diagnostics."""
+    configure_logging()
+    settings = get_settings()
+    logger.info(
+        "Starting ANA Automation Portal",
+        version=APP_VERSION,
+        python=platform.python_version(),
+        implementation=platform.python_implementation(),
+        node=platform.node(),
+    )
+    logger.info("Configuration", **settings.model_dump(mode="json"))
+    _log_startup_diagnostics(settings)
+    yield
+
+
 app = FastAPI(
     title="ANA Automation Portal",
     docs_url=None,
     redoc_url=None,
     openapi_url=None,
+    lifespan=lifespan,
 )
 app.mount("/static", StaticFiles(directory=BASE_DIR / "static"), name="static")
 
@@ -76,21 +117,19 @@ async def request_access(
     if not settings.email_enabled:
         raise HTTPException(status_code=404)
     if not _access_request_limiter.allow(user.user or user.email or "anonymous"):
+        logger.warning("Access request rate limited", user=user.user or user.email or "anonymous")
         raise HTTPException(status_code=429, detail="Too many requests, please try again later.")
     try:
         await send_access_request(user.user, user.email, message, user.groups, settings)
     except InvalidRequest as exc:
+        logger.warning("Rejected access request with invalid input", user=user.user, error=str(exc))
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     return templates.TemplateResponse(request, "request_sent.html", {"user": user})
 
 
 def run() -> None:
     """Start uvicorn for the ana-automation-ui console command."""
-    import logging
-
     import uvicorn
 
-    logging.basicConfig(level=logging.WARNING)
-    logging.getLogger("app").setLevel(logging.INFO)
     settings = get_settings()
-    uvicorn.run(app, host=settings.host, port=settings.port)
+    uvicorn.run(app, host=settings.host, port=settings.port, log_config=None)
