@@ -3,4 +3,4 @@ name: ana-automation-ui
 description: ANA automation UI portal with shared OIDC-protected ingress
 type: application
 version: 0.2.1
-appVersion: "latest"
+appVersion: "0.3.0"
