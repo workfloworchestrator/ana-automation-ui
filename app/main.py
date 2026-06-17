@@ -37,15 +37,13 @@ templates = Jinja2Templates(directory=BASE_DIR / "templates")
 def _log_startup_diagnostics(settings: Settings) -> None:
     if not settings.apps_config_path.is_file():
         logger.info("Apps config not found; using bundled default", configured_path=str(settings.apps_config_path))
-    if settings.email_enabled and not (
-        settings.smtp_host and settings.access_request_recipient and settings.access_request_from
-    ):
-        logger.warning(
-            "Email enabled but SMTP not fully configured",
-            smtp_host_set=bool(settings.smtp_host),
-            recipient_set=bool(settings.access_request_recipient),
-            from_set=bool(settings.access_request_from),
-        )
+    smtp_fields = {
+        "smtp_host_set": bool(settings.smtp_host),
+        "recipient_set": bool(settings.access_request_recipient),
+        "from_set": bool(settings.access_request_from),
+    }
+    if settings.email_enabled and not all(smtp_fields.values()):
+        logger.warning("Email enabled but SMTP not fully configured", **smtp_fields)
 
 
 @asynccontextmanager

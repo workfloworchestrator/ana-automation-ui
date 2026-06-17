@@ -18,9 +18,8 @@ class RateLimiter:
         """Record a hit for the key and report whether it stays within the limit."""
         cutoff = self.clock() - self.window_seconds
         recent = [hit for hit in self._hits.get(key, []) if hit > cutoff]
-        if len(recent) >= self.max_requests:
-            self._hits[key] = recent
-            return False
-        recent.append(self.clock())
+        allowed = len(recent) < self.max_requests
+        if allowed:
+            recent.append(self.clock())
         self._hits[key] = recent
-        return True
+        return allowed

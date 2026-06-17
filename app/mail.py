@@ -87,19 +87,16 @@ async def send_access_request(
 ) -> None:
     """Build and send the access-request email, retrying transient delivery failures."""
     msg = build_message(user, email, message, groups, settings)
+    requester = email or user or "unknown"
+    relay = f"{settings.smtp_host}:{settings.smtp_port}"
     try:
         await _deliver(msg, settings, attempts, delay)
     except _RETRYABLE as exc:
-        logger.error(
-            "Access-request email delivery failed",
-            requester=email or user or "unknown",
-            relay=f"{settings.smtp_host}:{settings.smtp_port}",
-            error=str(exc),
-        )
+        logger.error("Access-request email delivery failed", requester=requester, relay=relay, error=str(exc))
         raise
     logger.info(
         "Access-request email sent",
-        requester=email or user or "unknown",
+        requester=requester,
         recipient=settings.access_request_recipient,
-        relay=f"{settings.smtp_host}:{settings.smtp_port}",
+        relay=relay,
     )

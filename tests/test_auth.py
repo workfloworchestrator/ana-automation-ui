@@ -14,7 +14,7 @@ from app.auth import (
 )
 from app.config import Settings
 
-DEFAULTS = Settings(_env_file=None)
+DEFAULTS = Settings(_env_file=None, users_group="users", operators_group="operators")
 
 
 def _request(headers: dict[str, str]) -> Request:
