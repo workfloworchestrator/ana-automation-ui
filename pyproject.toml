@@ -1,6 +1,6 @@
 [project]
 name = "ana-automation-ui"
-version = "0.3.0"
+version = "0.3.1.dev1"
 description = "OIDC-authenticated FastAPI portal for the ANA NSI automation stack"
 requires-python = ">=3.13,<3.14"
 dependencies = [
