@@ -100,6 +100,12 @@ async def index(
 ) -> HTMLResponse:
     """Render the portal landing page with group-aware app stations."""
     views = app_views(load_apps(settings.apps_config_path), user.role)
+    logger.debug(
+        "Resolved portal view",
+        user=user.user or "anonymous",
+        role=user.role.value,
+        states={view.app.name: view.state.value for view in views},
+    )
     context = {"user": user, "apps": views, "email_enabled": settings.email_enabled}
     return templates.TemplateResponse(request, "index.html", context)
 

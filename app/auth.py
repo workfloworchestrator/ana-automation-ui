@@ -4,10 +4,13 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Annotated
 
+import structlog
 from fastapi import Depends, Request
 from starlette.datastructures import Headers
 
 from app.config import Settings, get_settings
+
+logger = structlog.get_logger(__name__)
 
 
 class Role(Enum):
@@ -74,4 +77,12 @@ def _user_from_headers(headers: Headers, settings: Settings) -> CurrentUser:
 
 def get_current_user(request: Request, settings: Annotated[Settings, Depends(get_settings)]) -> CurrentUser:
     """Resolve the current user from the oauth2-proxy forwarded headers."""
-    return _user_from_headers(request.headers, settings)
+    user = _user_from_headers(request.headers, settings)
+    logger.debug(
+        "Resolved user from forwarded headers",
+        user=user.user or None,
+        email=user.email or None,
+        groups=sorted(user.groups),
+        role=user.role.value,
+    )
+    return user
