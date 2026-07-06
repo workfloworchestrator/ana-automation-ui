@@ -11,10 +11,13 @@ spec:
       {{- include "ana-automation-ui.selectorLabels" . | nindent 6 }}
   template:
     metadata:
-      {{- with .Values.podAnnotations }}
       annotations:
+        # Roll the pod when the apps ConfigMap changes; a ConfigMap edit alone doesn't
+        # change the pod template, so nothing would restart otherwise.
+        checksum/apps-config: {{ include (print $.Template.BasePath "/configmap-apps.yaml") . | sha256sum }}
+        {{- with .Values.podAnnotations }}
         {{- toYaml . | nindent 8 }}
-      {{- end }}
+        {{- end }}
       labels:
         {{- include "ana-automation-ui.selectorLabels" . | nindent 8 }}
     spec:
