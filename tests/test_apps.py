@@ -24,8 +24,8 @@ def test_load_apps_from_file(tmp_path):
 
 def test_load_apps_falls_back_to_bundled(tmp_path):
     names = [app.name for app in load_apps(tmp_path / "missing.json")]
-    assert "AuRA" in names
     assert "Orchestrator" in names
+    assert "Safnari" in names
 
 
 # --- access decision -------------------------------------------------------

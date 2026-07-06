@@ -53,9 +53,8 @@ USER_HEADERS = {"X-Auth-Request-User": "usr", "X-Auth-Request-Groups": "users"}
     [
         pytest.param("<title>ANA Management Portal</title>", id="title"),
         pytest.param("/static/ana-logo.png", id="logo-src"),
-        pytest.param("AuRA", id="aura-name"),
         pytest.param("Orchestrator", id="orchestrator-name"),
-        pytest.param("Coming soon", id="coming-soon"),
+        pytest.param("Safnari", id="safnari-name"),
     ],
 )
 def test_index_contains(needle):
@@ -67,20 +66,20 @@ def test_index_contains(needle):
     [
         pytest.param(
             OPERATOR_HEADERS,
-            ('href="/aura/"', 'href="/dds/portal"'),
+            ('href="/dds-proxy/docs"', 'href="/dds/portal"'),
             ("OPERATORS ONLY",),
             id="operator-opens-all",
         ),
         pytest.param(
             USER_HEADERS,
             ('href="/dds/portal"', "OPERATORS ONLY"),
-            ('href="/aura/"',),
+            ('href="/dds-proxy/docs"',),
             id="user-locked-out-of-operator-apps",
         ),
         pytest.param(
             {},
             ("OPERATORS ONLY", "USERS ONLY"),
-            ('href="/aura/"', 'href="/dds/portal"'),
+            ('href="/dds-proxy/docs"', 'href="/dds/portal"'),
             id="anonymous-all-locked",
         ),
     ],
