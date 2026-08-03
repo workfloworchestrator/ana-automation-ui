@@ -5,7 +5,7 @@
   ],
   "minimumReleaseAge": "8 days",
   "internalChecksFilter": "strict",
-  "rebaseWhen": "behindbase",
+  "rebaseWhen": "behind-base-branch",
   "lockFileMaintenance": {
     "enabled": true,
     "automerge": true
