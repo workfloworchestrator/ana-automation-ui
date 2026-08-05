@@ -10,7 +10,7 @@ dependencies = [
     "aiosmtplib==5.1.2",
     "pydantic-settings==2.14.2",
     "python-multipart==0.0.32",
-    "structlog==25.5.0",
+    "structlog==26.1.0",
 ]
 
 [project.scripts]
