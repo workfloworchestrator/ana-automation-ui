@@ -115,8 +115,8 @@ secretProviderClass:
     # - key: cookie-secret
     #   objectName: ana-automation-ui-development-cookie-secret
 
-# IdP group identifiers as they appear in X-Auth-Request-Groups (plain names or, e.g.,
-# SRAM-style URNs). The portal maps a user to the operators (read-write) or users
+# IdP group identifiers as they appear in X-Auth-Request-Groups (plain names, or URNs if the
+# provider issues them). The portal maps a user to the operators (read-write) or users
 # (read-only) role by matching these; operators is treated as a superset of users.
 groups:
   users: users
