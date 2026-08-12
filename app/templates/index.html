@@ -25,7 +25,10 @@
     .user-panel .signout:hover { background: #a93226; }
     .container { max-width: 960px; margin: 2rem auto; padding: 0 1rem; }
     .apps { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.5rem; }
-    .app-card { position: relative; background: #fff; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); padding: 1.5rem; transition: box-shadow 0.2s; }
+    .app-card { position: relative; display: flex; flex-direction: column; background: #fff; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); padding: 1.5rem; transition: box-shadow 0.2s; }
+    /* Grid rows are equal height, so pushing the last child down lines the buttons up across a row
+       whatever the description wraps to. align-self stops the flex item stretching full width. */
+    .app-card > a, .app-card > .tag { margin-top: auto; align-self: flex-start; }
     .app-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
     .app-card h2 { font-size: 1.2rem; margin-bottom: 0.5rem; color: #2a5c5c; }
     .app-card p { font-size: 0.9rem; color: #666; margin-bottom: 1rem; line-height: 1.5; }
