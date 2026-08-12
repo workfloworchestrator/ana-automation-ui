@@ -1,9 +1,8 @@
 [
   {
-    "name": "Orchestrator",
-    "description": "Lifecycle management of network topologies, switching services, STPs, SDPs, and multi-domain point-to-point services.",
-    "url": "https://orchestrator.example.net/",
-    "requiredGroup": "operators"
+    "name": "AMISS",
+    "description": "Comprehensive management UI for real-time and static visualization of ANA data.",
+    "url": "/amiss/"
   },
   {
     "name": "Safnari",
@@ -16,15 +15,21 @@
     "url": "/dds/portal"
   },
   {
-    "name": "DDS Proxy",
-    "description": "REST API proxy for the DDS - provides a simplified interface to query topologies, STPs, and SDPs.",
-    "url": "/dds-proxy/docs",
+    "name": "Orchestrator",
+    "description": "Lifecycle management of network topologies, switching services, STPs, SDPs, and multi-domain point-to-point services.",
+    "url": "https://orchestrator.example.net/",
     "requiredGroup": "operators"
   },
   {
     "name": "Aggregator Proxy",
     "description": "REST proxy for the NSI aggregator - exposes a simplified connection state-machine on top of NSI.",
     "url": "/aggregator-proxy/docs",
+    "requiredGroup": "operators"
+  },
+  {
+    "name": "DDS Proxy",
+    "description": "REST API proxy for the DDS - provides a simplified interface to query topologies, STPs, and SDPs.",
+    "url": "/dds-proxy/docs",
     "requiredGroup": "operators"
   }
 ]
