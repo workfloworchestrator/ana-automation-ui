@@ -52,14 +52,12 @@ metadata:
   name: {{ include "ana-automation-ui.fullname" $ }}-{{ .name }}
   labels:
     {{- include "ana-automation-ui.labels" $ | nindent 4 }}
+  {{/* Merge so a backend override replaces a shared key instead of duplicating it.
+       cert-manager keys are dropped: backends must not each request the same certificate. */}}
+  {{- $shared := omit ($.Values.ingress.annotations | default dict) "cert-manager.io/issuer" "cert-manager.io/cluster-issuer" }}
+  {{- $ann := merge (dict "nginx.ingress.kubernetes.io/rewrite-target" (.rewriteTarget | default "/$1")) (deepCopy (.annotations | default dict)) (deepCopy $shared) }}
   annotations:
-    nginx.ingress.kubernetes.io/rewrite-target: {{ .rewriteTarget | default (printf "/%s" `$1`) }}
-    {{- with $.Values.ingress.annotations }}
-    {{- toYaml . | nindent 4 }}
-    {{- end }}
-    {{- with .annotations }}
-    {{- toYaml . | nindent 4 }}
-    {{- end }}
+    {{- toYaml $ann | nindent 4 }}
 spec:
   {{- with $.Values.ingress.className }}
   ingressClassName: {{ . }}
