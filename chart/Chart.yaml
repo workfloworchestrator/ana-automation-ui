@@ -2,5 +2,14 @@ apiVersion: v2
 name: ana-automation-ui
 description: ANA automation UI portal with shared OIDC-protected ingress
 type: application
-version: 0.3.1
-appVersion: "0.3.0"
+
+# Placeholders only. The chart version and appVersion are both the release git
+# tag, injected by .github/workflows/chart.yml:
+#     helm package --version $TAG --app-version $TAG
+# Do not maintain these numbers by hand. 0.0.0 sorts below every release and
+# names an image tag that does not exist, so a mis-built chart fails loudly.
+version: 0.0.0
+appVersion: "0.0.0"
+
+annotations:
+  org.opencontainers.image.source: https://github.com/workfloworchestrator/ana-automation-ui
