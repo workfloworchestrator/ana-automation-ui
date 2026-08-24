@@ -5,7 +5,7 @@ description = "OIDC-authenticated FastAPI portal for the ANA NSI automation stac
 requires-python = ">=3.13,<3.14"
 dependencies = [
     "fastapi==0.141.1",
-    "uvicorn==0.52.1",
+    "uvicorn==0.52.3",
     "jinja2==3.1.6",
     "aiosmtplib==5.1.2",
     "pydantic-settings==2.15.0",
@@ -20,10 +20,10 @@ ana-automation-ui = "app.main:run"
 dev = [
     "aiosmtpd==1.4.6",
     "httpx2==2.10.0",
-    "mypy==2.3.0",
+    "mypy==2.3.1",
     "pytest==9.1.1",
     "pytest-asyncio==1.4.0",
-    "ruff==0.16.2",
+    "ruff==0.16.3",
 ]
 
 [build-system]
