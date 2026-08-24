@@ -121,7 +121,7 @@ curl -s http://localhost:8080/ -H 'X-Auth-Request-Groups: operators'
 With Docker (two-stage uv wheel build):
 
 ```bash
-docker build -t ana-automation-ui .
+docker build --build-arg VERSION="$(uvx --from setuptools-scm python -m setuptools_scm)" -t ana-automation-ui .
 docker run --rm -p 8080:8080 ana-automation-ui
 ```
 
@@ -165,6 +165,18 @@ email:
     port: 25
 # Routing: enable one of ingress / httpRoute, or configure it externally (see above).
 ```
+
+## Versioning
+
+The release git tag is the only place a version is written by hand. `pyproject.toml` declares
+`dynamic = ["version"]` and hatch-vcs derives it: a tag builds `0.4.2`, any other commit builds the
+next patch as a dev release with its commit, `0.4.3.dev3+g1a2b3c4`. The portal exposes that version
+via `importlib.metadata.version("ana-automation-ui")`.
+
+The container build has no `.git`, so `.github/workflows/container.yml` checks out with
+`fetch-depth: 0`, resolves the version on the runner, and passes it as `--build-arg VERSION=...`,
+which the `Dockerfile` hands to hatch-vcs as `SETUPTOOLS_SCM_PRETEND_VERSION`. A build without that
+argument fails rather than producing a mislabelled image.
 
 ## Development
 

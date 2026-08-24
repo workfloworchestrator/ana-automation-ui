@@ -53,6 +53,16 @@ The chart deploys the app (Deployment + Service) and its configuration, but **ho
 
 In all cases oauth2-proxy authenticates the user and forwards `X-Auth-Request-User/Email/Groups`. Group enforcement (which group may open which app) is done at the routing layer — the portal's card greying mirrors it but is **not** the gate.
 
+## Versioning
+
+The version is the git tag; never edit it. `pyproject.toml` is `dynamic = ["version"]` with hatch-vcs
+(`[tool.hatch.version] source = "vcs"`), so a tag builds `0.4.2` and any other commit builds
+`0.4.3.dev<n>+g<sha>`. The container build has no `.git`, so `container.yml` resolves the version on
+the runner and passes `--build-arg VERSION`, which the `Dockerfile` exports as
+`SETUPTOOLS_SCM_PRETEND_VERSION`. Note hatch-vcs does **not** honour the per-distribution
+`SETUPTOOLS_SCM_PRETEND_VERSION_FOR_*` form the setuptools repos use — it calls setuptools-scm
+without a dist name, so only the generic variable applies. Omitting it fails the build by design.
+
 ## Key Design Decisions
 
 - **Two-group model**: `users` = read-only, `operators` = read-write (a superset). A user in neither group sees only greyed cards and the access-request form; the routing layer returns 403 if they open a restricted app directly.
