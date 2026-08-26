@@ -106,7 +106,7 @@ async def index(
         role=user.role.value,
         states={view.app.name: view.state.value for view in views},
     )
-    context = {"user": user, "apps": views, "email_enabled": settings.email_enabled}
+    context = {"user": user, "apps": views, "email_enabled": settings.email_enabled, "version": APP_VERSION}
     return templates.TemplateResponse(request, "index.html", context)
 
 

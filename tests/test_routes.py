@@ -5,7 +5,7 @@ from fastapi.testclient import TestClient
 from app import main
 from app.config import Settings, get_settings
 from app.mail import InvalidRequest
-from app.main import _access_request_limiter, _log_startup_diagnostics, app
+from app.main import APP_VERSION, _access_request_limiter, _log_startup_diagnostics, app
 
 client = TestClient(app)
 
@@ -59,6 +59,10 @@ USER_HEADERS = {"X-Auth-Request-User": "usr", "X-Auth-Request-Groups": "users"}
 )
 def test_index_contains(needle):
     assert needle in client.get("/").text
+
+
+def test_index_user_panel_shows_version():
+    assert APP_VERSION in client.get("/").text
 
 
 @pytest.mark.parametrize(

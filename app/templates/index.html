@@ -72,6 +72,8 @@
           {% for group in user.short_groups %}<li>{{ group }}</li>{% endfor %}
         </ul>
         {% endif %}
+        <p class="panel-label">Version</p>
+        <p class="panel-value">{{ version }}</p>
         <a class="signout" href="/oauth2/sign_out?rd={{ request.base_url }}">Sign out</a>
       </div>
     </div>
