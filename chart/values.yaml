@@ -3,7 +3,7 @@ replicaCount: 1
 image:
   repository: ghcr.io/workfloworchestrator/ana-automation-ui
   pullPolicy: Always
-  tag: ""
+  tag: "@sha256:497ff226263d5c4b2b371853fe554f0db9a9c492406256d777faa1bfa6252271"
 
 nameOverride: ""
 fullnameOverride: ""
