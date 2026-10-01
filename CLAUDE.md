@@ -63,6 +63,12 @@ the runner and passes `--build-arg VERSION`, which the `Dockerfile` exports as
 `SETUPTOOLS_SCM_PRETEND_VERSION_FOR_*` form the setuptools repos use — it calls setuptools-scm
 without a dist name, so only the generic variable applies. Omitting it fails the build by design.
 
+## Dependency cooldown
+
+`exclude-newer = "8 days"` in `pyproject.toml` and `minimumReleaseAge` in `.github/renovate.json`
+must stay equal. uv enforces the cooldown on indirect dependencies, which Renovate cannot. An urgent
+fix younger than that needs a temporary `exclude-newer-package = { <pkg> = false }`.
+
 ## Key Design Decisions
 
 - **Two-group model**: `users` = read-only, `operators` = read-write (a superset). A user in neither group sees only greyed cards and the access-request form; the routing layer returns 403 if they open a restricted app directly.
