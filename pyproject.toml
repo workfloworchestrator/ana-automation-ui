@@ -4,7 +4,7 @@ dynamic = ["version"]
 description = "OIDC-authenticated FastAPI portal for the ANA NSI automation stack"
 requires-python = ">=3.13,<3.14"
 dependencies = [
-    "fastapi==0.142.1",
+    "fastapi==0.142.2",
     "uvicorn==0.54.0",
     "jinja2==3.1.6",
     "aiosmtplib==5.1.3",
