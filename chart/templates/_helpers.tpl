@@ -47,3 +47,30 @@ Selector labels
 app.kubernetes.io/name: {{ include "ana-automation-ui.name" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
+
+{{/*
+Redis fullname. "-redis" is appended after truncating to 57, so the result stays within 63.
+*/}}
+{{- define "ana-automation-ui.redis.fullname" -}}
+{{- printf "%s-redis" (include "ana-automation-ui.fullname" . | trunc 57 | trimSuffix "-") }}
+{{- end }}
+
+{{/*
+Redis selector labels. The pod template carries only these, so a chart release that leaves
+Redis unchanged does not restart it and sign everyone out. The "-redis" name keeps its pods out
+of the portal Service selector, which matches on name and instance alone.
+*/}}
+{{- define "ana-automation-ui.redis.selectorLabels" -}}
+app.kubernetes.io/name: {{ printf "%s-redis" (include "ana-automation-ui.name" . | trunc 57 | trimSuffix "-") }}
+app.kubernetes.io/instance: {{ .Release.Name }}
+app.kubernetes.io/component: redis
+{{- end }}
+
+{{/*
+Redis labels for the Deployment and Service metadata.
+*/}}
+{{- define "ana-automation-ui.redis.labels" -}}
+helm.sh/chart: {{ include "ana-automation-ui.chart" . }}
+{{ include "ana-automation-ui.redis.selectorLabels" . }}
+app.kubernetes.io/managed-by: {{ .Release.Service }}
+{{- end }}

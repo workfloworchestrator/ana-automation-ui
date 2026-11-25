@@ -1,0 +1,67 @@
+{{- if .Values.redis.enabled -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "ana-automation-ui.redis.fullname" . }}
+  labels:
+    {{- include "ana-automation-ui.redis.labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "ana-automation-ui.redis.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "ana-automation-ui.redis.selectorLabels" . | nindent 8 }}
+    spec:
+      automountServiceAccountToken: false
+      # UID and GID of the redis user in the official image.
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 999
+        runAsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: redis
+          image: "{{ .Values.redis.image }}"
+          # Skips the image entrypoint, which loads search, JSON, bloom and timeseries (12 MB more).
+          command: ["redis-server"]
+          # No RDB or AOF: a lost session only means a new login.
+          args: ["--save", "", "--appendonly", "no"]
+          ports:
+            - name: redis
+              containerPort: 6379
+              protocol: TCP
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          readinessProbe:
+            exec:
+              command: ["redis-cli", "ping"]
+          livenessProbe:
+            exec:
+              command: ["redis-cli", "ping"]
+          {{- with .Values.redis.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "ana-automation-ui.redis.fullname" . }}
+  labels:
+    {{- include "ana-automation-ui.redis.labels" . | nindent 4 }}
+spec:
+  ports:
+    - port: 6379
+      targetPort: redis
+      protocol: TCP
+      name: redis
+  selector:
+    {{- include "ana-automation-ui.redis.selectorLabels" . | nindent 4 }}
+{{- end }}

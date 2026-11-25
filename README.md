@@ -67,6 +67,18 @@ Whichever you choose, oauth2-proxy must forward `X-Auth-Request-Groups`, and the
 routing layer should strip inbound `X-Auth-Request-*` headers from the client
 before oauth2-proxy sets them, so they cannot be spoofed.
 
+### Session store
+
+With the default cookie session store, oauth2-proxy splits a session that exceeds
+4 KB over several cookies and logs a warning. Set `redis.enabled=true` to run a
+small Redis next to the portal, and point oauth2-proxy at it with
+`session_store_type = "redis"` and `redis_connection_url =
+"redis://<fullname>-redis:6379"`, where `<fullname>` is the portal's Service name
+(add the namespace if oauth2-proxy runs in another one). The cookie then holds a
+ticket only. oauth2-proxy encrypts each session with a secret that lives in the
+user's cookie, so Redis needs no password. It keeps nothing on disk: a restart
+signs everyone out. oauth2-proxy does not start while Redis is unreachable.
+
 ## Access model
 
 | Group | Access |
@@ -185,4 +197,6 @@ uv run ruff check .
 uv run ruff format --check .
 uv run mypy app
 uv run pytest
+helm lint chart
+helm lint chart --set redis.enabled=true
 ```

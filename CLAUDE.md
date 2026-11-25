@@ -26,8 +26,10 @@ uv run pytest
 # Build the container image (two-stage uv wheel build)
 docker build -t ana-automation-ui .
 
-# Render Helm templates
+# Render and lint the Helm chart (CI lints with and without the optional Redis)
 helm template test chart/
+helm lint chart
+helm lint chart --set redis.enabled=true
 ```
 
 ## Architecture
@@ -41,7 +43,7 @@ helm template test chart/
 - **`app/mail.py`** — builds the access-request email (fixed From + requester Reply-To, CR/LF injection guard) and sends it via `aiosmtplib`.
 - **`app/ratelimit.py`** — in-memory per-user rate limiter for the request-access endpoint.
 - **`app/templates/`, `app/static/`** — Jinja2 templates and static assets (logo, `app.js`), bundled into the wheel.
-- **`chart/`** — Helm chart: `deployment.yaml`, `service.yaml`, `configmap-apps.yaml` (renders `portal.apps`), `secret-provider-class.yaml` (Azure Key Vault via the Secrets Store CSI driver), and the optional `ingress.yaml` / `httproute.yaml` routing templates.
+- **`chart/`** — Helm chart: `deployment.yaml`, `service.yaml`, `configmap-apps.yaml` (renders `portal.apps`), `secret-provider-class.yaml` (Azure Key Vault via the Secrets Store CSI driver), the optional `redis.yaml` (oauth2-proxy session store), and the optional `ingress.yaml` / `httproute.yaml` routing templates.
 
 ## Routing and authentication
 
@@ -76,5 +78,6 @@ maintenance sets `minimumReleaseAge` to `null`: it has no release timestamp, so 
 - **Two-group model**: `users` = read-only, `operators` = read-write (a superset). A user in neither group sees only greyed cards and the access-request form; the routing layer returns 403 if they open a restricted app directly.
 - **Header trust boundary**: the app trusts `X-Auth-Request-*` for *display only*, never to grant a server-side action. The routing layer must strip these headers from client input before oauth2-proxy populates them (e.g. a header-stripping middleware on the ingress or gateway), so clients can't self-attest.
 - **Apps as config**: the portal app list is data (`portal.apps` → ConfigMap, or the bundled default), so adding or retiring an app is a config change. Each app's `requiredGroup` mirrors the routing-layer enforcement and must agree with it.
+- **Session store**: `redis.enabled` runs a Redis for oauth2-proxy's sessions (see the README). It is dedicated, not the orchestrator's Redis: oauth2-proxy refuses to start without Redis, and portal login would then depend on the orchestrator pod. `session_cookie_minimal` is no alternative, since it conflicts with `pass_access_token` and `cookie_refresh`, and AMISS needs the access token.
 - **CSP + security headers** are set by the app, so they apply regardless of the routing layer.
 - The access-request email uses a fixed authenticated `From` with the requester in `Reply-To` for deliverability; `email.fromUser` opts into using the requester's own address as `From`.

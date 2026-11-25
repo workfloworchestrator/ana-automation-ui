@@ -126,6 +126,15 @@ secretProviderClass:
     # - key: cookie-secret
     #   objectName: ana-automation-ui-development-cookie-secret
 
+# Redis session store for oauth2-proxy, see the README. Point oauth2-proxy at
+# redis://<fullname>-redis:6379.
+redis:
+  enabled: false
+  # An exact tag, so Renovate bumps go through the release age check; a digest-only update of a
+  # floating tag skips it.
+  image: redis:8.10.3-alpine@sha256:7958cfbb9d152f87dadfbc89f1b0b15938f0b81ff8982feb327476f4911935c3
+  resources: {}
+
 # IdP group identifiers as they appear in X-Auth-Request-Groups (plain names, or URNs if the
 # provider issues them). The portal maps a user to the operators (read-write) or users
 # (read-only) role by matching these; operators is treated as a superset of users.
