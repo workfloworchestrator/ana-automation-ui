@@ -30,6 +30,7 @@ docker build -t ana-automation-ui .
 helm template test chart/
 helm lint chart
 helm lint chart --set redis.enabled=true
+helm lint chart --set redis.enabled=true --set redis.passwordSecret.name=t-secret
 ```
 
 ## Architecture
@@ -78,6 +79,6 @@ maintenance sets `minimumReleaseAge` to `null`: it has no release timestamp, so 
 - **Two-group model**: `users` = read-only, `operators` = read-write (a superset). A user in neither group sees only greyed cards and the access-request form; the routing layer returns 403 if they open a restricted app directly.
 - **Header trust boundary**: the app trusts `X-Auth-Request-*` for *display only*, never to grant a server-side action. The routing layer must strip these headers from client input before oauth2-proxy populates them (e.g. a header-stripping middleware on the ingress or gateway), so clients can't self-attest.
 - **Apps as config**: the portal app list is data (`portal.apps` → ConfigMap, or the bundled default), so adding or retiring an app is a config change. Each app's `requiredGroup` mirrors the routing-layer enforcement and must agree with it.
-- **Session store**: `redis.enabled` runs a Redis for oauth2-proxy's sessions (see the README). It is dedicated, not the orchestrator's Redis: oauth2-proxy refuses to start without Redis, and portal login would then depend on the orchestrator pod. `session_cookie_minimal` is no alternative, since it conflicts with `pass_access_token` and `cookie_refresh`, and AMISS needs the access token.
+- **Session store**: `redis.enabled` runs a Redis for oauth2-proxy's sessions (see the README). It is dedicated, not the orchestrator's Redis: oauth2-proxy refuses to start without Redis, and portal login would then depend on the orchestrator pod. `session_cookie_minimal` is no alternative, since it conflicts with `pass_access_token` and `cookie_refresh`, and AMISS needs the access token. The Redis password (`redis.passwordSecret`) comes from the same CSI-synced Secret as the OIDC credentials: it protects availability, not confidentiality, since sessions are encrypted with a secret that only the user's cookie carries.
 - **CSP + security headers** are set by the app, so they apply regardless of the routing layer.
 - The access-request email uses a fixed authenticated `From` with the requester in `Reply-To` for deliverability; `email.fromUser` opts into using the requester's own address as `From`.

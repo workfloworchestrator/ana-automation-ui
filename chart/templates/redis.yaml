@@ -29,7 +29,26 @@ spec:
           # Skips the image entrypoint, which loads search, JSON, bloom and timeseries (12 MB more).
           command: ["redis-server"]
           # No RDB or AOF: a lost session only means a new login.
-          args: ["--save", "", "--appendonly", "no"]
+          args:
+            {{- if .Values.redis.passwordSecret.name }}
+            - --requirepass
+            - $(REDISCLI_AUTH)
+            {{- end }}
+            - --save
+            - ""
+            - --appendonly
+            - "no"
+          {{- with .Values.redis.passwordSecret }}
+          {{- if .name }}
+          # redis-cli, and so the probes, authenticate with REDISCLI_AUTH.
+          env:
+            - name: REDISCLI_AUTH
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .name }}
+                  key: {{ .key }}
+          {{- end }}
+          {{- end }}
           ports:
             - name: redis
               containerPort: 6379

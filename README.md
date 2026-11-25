@@ -76,8 +76,16 @@ small Redis next to the portal, and point oauth2-proxy at it with
 "redis://<fullname>-redis:6379"`, where `<fullname>` is the portal's Service name
 (add the namespace if oauth2-proxy runs in another one). The cookie then holds a
 ticket only. oauth2-proxy encrypts each session with a secret that lives in the
-user's cookie, so Redis needs no password. It keeps nothing on disk: a restart
+user's cookie, so Redis holds only ciphertext. It keeps nothing on disk: a restart
 signs everyone out. oauth2-proxy does not start while Redis is unreachable.
+
+Any pod that can reach Redis can still flush the sessions or shut it down. Set
+`redis.passwordSecret.name` to a Secret with the password (key `redis-password`,
+or `redis.passwordSecret.key`), for example the CSI-synced `<release>-secret`
+with a `redis-password` entry in `secretProviderClass.objects`, and give
+oauth2-proxy the same password in `OAUTH2_PROXY_REDIS_PASSWORD`. Neither reads
+the Secret again while running: after the password changes, restart Redis and
+oauth2-proxy together.
 
 ## Access model
 
@@ -199,4 +207,5 @@ uv run mypy app
 uv run pytest
 helm lint chart
 helm lint chart --set redis.enabled=true
+helm lint chart --set redis.enabled=true --set redis.passwordSecret.name=t-secret
 ```

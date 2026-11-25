@@ -133,6 +133,10 @@ redis:
   # An exact tag, so Renovate bumps go through the release age check; a digest-only update of a
   # floating tag skips it.
   image: redis:8.10.3-alpine@sha256:7958cfbb9d152f87dadfbc89f1b0b15938f0b81ff8982feb327476f4911935c3
+  # Secret with the Redis password, e.g. the CSI-synced "<release>-secret". Empty name: no password.
+  passwordSecret:
+    name: ""
+    key: redis-password
   resources: {}
 
 # IdP group identifiers as they appear in X-Auth-Request-Groups (plain names, or URNs if the
